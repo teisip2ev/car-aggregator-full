@@ -108,7 +108,7 @@ def scrape_make(page, make_name, make_id):
     return total
 
 with sync_playwright() as p:
-    browser = p.chromium.launch(headless=False)
+    browser = p.chromium.launch(headless=True)
     page = browser.new_page()
     grand_total = 0
     for make_name, make_id in MAKES.items():
