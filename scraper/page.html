@@ -1,0 +1,114 @@
+'use client'
+import { useEffect, useState } from 'react'
+import { supabase } from './lib/supabase'
+
+export default function Home() {
+  const [listings, setListings] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [fuelFilter, setFuelFilter] = useState('')
+  const [maxPrice, setMaxPrice] = useState('')
+
+  useEffect(() => { fetchListings() }, [])
+
+  async function fetchListings() {
+    setLoading(true)
+    let query = supabase
+      .from('listings')
+      .select('*')
+      .order('price_eur', { ascending: true })
+      .limit(50)
+
+    if (fuelFilter) query = query.eq('fuel', fuelFilter)
+    if (maxPrice) query = query.lte('price_eur', parseInt(maxPrice))
+
+    const { data, error } = await query
+    if (error) console.error(error)
+    else setListings(data)
+    setLoading(false)
+  }
+
+  const filtered = listings.filter(l =>
+    !search || l.title?.toLowerCase().includes(search.toLowerCase())
+  )
+
+  return (
+    <main className="max-w-5xl mx-auto p-6">
+      <h1 className="text-3xl font-bold mb-1">Car Search</h1>
+      <p className="text-gray-500 mb-6">Estonian car listings aggregator</p>
+
+      <div className="flex gap-3 mb-6 flex-wrap">
+        <input
+          type="text"
+          placeholder="Search by make/model..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="border rounded px-3 py-2 flex-1 min-w-48"
+        />
+        <select
+          value={fuelFilter}
+          onChange={e => setFuelFilter(e.target.value)}
+          className="border rounded px-3 py-2"
+        >
+          <option value="">All fuels</option>
+          <option value="Diisel">Diesel</option>
+          <option value="Bensiin">Petrol</option>
+          <option value="Hübriid">Hybrid</option>
+          <option value="Elekter">Electric</option>
+        </select>
+        <input
+          type="number"
+          placeholder="Max price €"
+          value={maxPrice}
+          onChange={e => setMaxPrice(e.target.value)}
+          className="border rounded px-3 py-2 w-36"
+        />
+        <button
+          onClick={fetchListings}
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+        >
+          Search
+        </button>
+      </div>
+
+      {loading ? (
+        <p className="text-gray-500">Loading...</p>
+      ) : (
+        <>
+          <p className="text-sm text-gray-500 mb-4">{filtered.length} listings</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filtered.map(car => (
+              
+                key={car.id}
+                href={car.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block border rounded-xl overflow-hidden hover:shadow-md hover:border-blue-400 transition"
+              >
+                {car.image_url ? (
+                  <img
+                    src={car.image_url}
+                    alt={car.title}
+                    className="w-full h-48 object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-48 bg-gray-100 flex items-center justify-center text-gray-400 text-sm">
+                    No image
+                  </div>
+                )}
+                <div className="p-3">
+                  <div className="flex justify-between items-start mb-1">
+                    <p className="font-semibold text-base">{car.title}</p>
+                    <p className="font-bold text-blue-600 text-base ml-2 whitespace-nowrap">{car.price_eur?.toLocaleString()} €</p>
+                  </div>
+                  <p className="text-gray-500 text-sm truncate">{car.description}</p>
+                  <p className="text-gray-400 text-xs mt-1">{car.year} · {car.mileage_km?.toLocaleString()} km · {car.fuel} · {car.transmission}</p>
+                </div>
+              </a>
+            ))}
+          </div>
+        </>
+      )}
+    </main>
+  )
+}
