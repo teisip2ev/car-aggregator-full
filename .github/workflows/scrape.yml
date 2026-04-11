@@ -21,14 +21,14 @@ jobs:
           pip install -r scraper/requirements.txt
           playwright install chromium
 
-      - name: Run auto24 scraper
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-        run: python scraper/recon.py
-
       - name: Run autoportaal scraper
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: python scraper/scraper_autoportaal.py
+
+      - name: Run auto24 scraper
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: python scraper/recon.py
