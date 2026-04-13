@@ -170,8 +170,13 @@ export default function Home() {
                     {car.mileage_km && <span className="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs px-2 py-0.5 rounded">{car.mileage_km?.toLocaleString()} km</span>}
                     {car.fuel && <span className="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs px-2 py-0.5 rounded">{car.fuel}</span>}
                     {car.transmission && <span className="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs px-2 py-0.5 rounded">{car.transmission}</span>}
-                    {car.source && <span className={`text-xs px-2 py-0.5 rounded font-medium ${car.source === 'auto24' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'}`}>{car.source}</span>}
-                  </div>
+{car.source && <span className={`text-xs px-2 py-0.5 rounded font-medium ${
+  car.source === 'auto24' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300' :
+  car.source === 'autoportaal' ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' :
+  car.source === 'autodiiler' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300' :
+  car.source === 'veego' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300' :
+  'bg-gray-100 text-gray-700'
+}`}>{car.source}</span>}                  </div>
                 </div>
               </a>
             ))}
