@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from './lib/supabase'
 
-const MAKES = ['Audi','BMW','Ford','Honda','Hyundai','Jeep','Kia','Land Rover','Lexus','Mazda','Mercedes-Benz','Mitsubishi','Nissan','Opel','Peugeot','Porsche','Renault','Skoda','Subaru','Suzuki','Tesla','Toyota','Volkswagen','Volvo']
+const MAKES = ['Alfa Romeo','Audi','Bentley','BMW','Cadillac','Chevrolet','Chrysler','Citroen','CUPRA','Dacia','Dodge','Ferrari','Fiat','Ford','Honda','Hyundai','Infiniti','Jaguar','Jeep','Kia','Lamborghini','Land Rover','Lexus','Maserati','Mazda','Mercedes-Benz','MINI','Mitsubishi','Nissan','Opel','Peugeot','Polestar','Porsche','Renault','Rolls-Royce','Saab','SEAT','Skoda','Subaru','Suzuki','Tesla','Toyota','Volkswagen','Volvo']
 const PAGE_SIZE = 48
 
 export default function Home() {
@@ -35,7 +35,7 @@ export default function Home() {
     const { data } = await supabase
       .from('listings')
       .select('model')
-      .ilike('title', `%${selectedMake}%`)
+      .eq('make', selectedMake)
       .not('model', 'is', null)
     if (data) {
       const unique = [...new Set(data.map(d => d.model))].filter(Boolean).sort()
@@ -54,7 +54,7 @@ export default function Home() {
       .select('*', { count: 'exact' })
       .order(sortField, { ascending: sortOrder === 'asc' })
       .range(from, to)
-    if (make) query = query.ilike('title', `%${make}%`)
+    if (make) query = query.eq('make', make)
     if (model) query = query.eq('model', model)
     if (fuel) query = query.eq('fuel', fuel)
     if (transmission) query = query.eq('transmission', transmission)
@@ -102,10 +102,11 @@ export default function Home() {
           </select>
           <select value={fuel} onChange={e => setFuel(e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800">
             <option value="">Kütus</option>
-            <option value="Diisel">Diisel</option>
             <option value="Bensiin">Bensiin</option>
-            <option value="Hübriid">Hübriid</option>
+            <option value="Diisel">Diisel</option>
             <option value="Elekter">Elekter</option>
+            <option value="Hübriid">Hübriid</option>
+            <option value="Gaasbensiin">Gaas / LPG</option>
           </select>
           <select value={transmission} onChange={e => setTransmission(e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800">
             <option value="">Käigukast</option>
@@ -130,6 +131,7 @@ export default function Home() {
             <option value="price_eur">Hind</option>
             <option value="year">Aasta</option>
             <option value="mileage_km">Läbisõit</option>
+            <option value="created_at">Lisatud</option>
           </select>
           <select value={sortDir} onChange={e => setSortDir(e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800">
             <option value="asc">Kasvav ↑</option>
@@ -170,13 +172,14 @@ export default function Home() {
                     {car.mileage_km && <span className="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs px-2 py-0.5 rounded">{car.mileage_km?.toLocaleString()} km</span>}
                     {car.fuel && <span className="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs px-2 py-0.5 rounded">{car.fuel}</span>}
                     {car.transmission && <span className="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs px-2 py-0.5 rounded">{car.transmission}</span>}
-{car.source && <span className={`text-xs px-2 py-0.5 rounded font-medium ${
-  car.source === 'auto24' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300' :
-  car.source === 'autoportaal' ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' :
-  car.source === 'autodiiler' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300' :
-  car.source === 'veego' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300' :
-  'bg-gray-100 text-gray-700'
-}`}>{car.source}</span>}                  </div>
+                    {car.source && <span className={`text-xs px-2 py-0.5 rounded font-medium ${
+                      car.source === 'auto24' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300' :
+                      car.source === 'autoportaal' ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' :
+                      car.source === 'autodiiler' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300' :
+                      car.source === 'veego' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300' :
+                      'bg-gray-100 text-gray-700'
+                    }`}>{car.source}</span>}
+                  </div>
                 </div>
               </a>
             ))}

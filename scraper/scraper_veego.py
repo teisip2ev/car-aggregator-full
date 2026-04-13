@@ -5,10 +5,14 @@ from supabase import create_client
 from config import SUPABASE_URL, SUPABASE_KEY
 
 MAKES = {
-    'Audi': 15, 'BMW': 19, 'Ford': 46, 'Honda': 53, 'Hyundai': 57,
-    'Jeep': 63, 'Kia': 65, 'Land Rover': 71, 'Lexus': 72, 'Mazda': 82,
-    'Mercedes-Benz': 84, 'Mitsubishi': 89, 'Nissan': 93, 'Opel': 96,
-    'Peugeot': 98, 'Porsche': 103, 'Renault': 106, 'Skoda': 114,
+    'Alfa Romeo': 6, 'Audi': 15, 'Bentley': 18, 'BMW': 19, 'Cadillac': 24,
+    'Chevrolet': 26, 'Chrysler': 27, 'Citroen': 28, 'CUPRA': 30, 'Dacia': 31,
+    'Dodge': 38, 'Ferrari': 43, 'Fiat': 44, 'Ford': 46, 'Honda': 53,
+    'Hyundai': 57, 'Infiniti': 59, 'Jaguar': 62, 'Jeep': 63, 'Kia': 65,
+    'Lamborghini': 69, 'Land Rover': 71, 'Lexus': 72, 'Maserati': 79,
+    'Mazda': 82, 'Mercedes-Benz': 84, 'MINI': 88, 'Mitsubishi': 89,
+    'Nissan': 93, 'Opel': 96, 'Peugeot': 98, 'Polestar': 101, 'Porsche': 103,
+    'Renault': 106, 'Rolls-Royce': 108, 'Saab': 110, 'SEAT': 113, 'Skoda': 114,
     'Subaru': 117, 'Suzuki': 118, 'Tesla': 119, 'Toyota': 120,
     'Volkswagen': 125, 'Volvo': 126
 }
@@ -29,24 +33,18 @@ supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 def fetch_page(make_id, page):
     url = 'https://api.veego.ee/api/v2/search'
     payload = json.dumps({
-        'make_id': make_id,
-        'is_new': 0,
-        'per_page': 30,
-        'page': page,
-        'is_rent': False,
-        'count': 2
+        'make_id': make_id, 'is_new': 0, 'per_page': 30,
+        'page': page, 'is_rent': False, 'count': 2
     }).encode('utf-8')
     req = urllib.request.Request(url, data=payload, headers={
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'Origin': 'https://veego.ee',
-        'Referer': 'https://veego.ee/'
+        'Content-Type': 'application/json', 'Accept': 'application/json',
+        'Origin': 'https://veego.ee', 'Referer': 'https://veego.ee/'
     })
     response = urllib.request.urlopen(req, timeout=15)
     return json.loads(response.read().decode())
 
-def parse_listing(item):
+def parse_listing(item, make_name):
     try:
         vehicle_id = item.get('id')
         url = f"https://veego.ee/kasutatud-autod/{vehicle_id}"
@@ -63,19 +61,13 @@ def parse_listing(item):
         images = item.get('images', [])
         image_url = images[0].get('thumb_data_sm') if images else None
         return {
-            'url': url,
-            'title': title,
-            'model': None,
-            'description': None,
-            'price_eur': int(price),
+            'url': url, 'title': title, 'model': None, 'make': make_name,
+            'description': None, 'price_eur': int(price),
             'year': int(year) if year else None,
             'mileage_km': int(mileage) if mileage else None,
-            'fuel': fuel,
-            'transmission': transmission,
-            'body': None,
-            'drive': None,
-            'image_url': image_url,
-            'source': 'veego'
+            'fuel': fuel, 'transmission': transmission,
+            'body': None, 'drive': None,
+            'image_url': image_url, 'source': 'veego'
         }
     except:
         return None
@@ -94,7 +86,7 @@ for make_name, make_id in MAKES.items():
         results = data.get('results', [])
         if not results:
             break
-        listings = [l for l in (parse_listing(r) for r in results) if l]
+        listings = [l for l in (parse_listing(r, make_name) for r in results) if l]
         if listings:
             try:
                 supabase.table('listings').upsert(listings, on_conflict='url').execute()

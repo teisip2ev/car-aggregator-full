@@ -6,11 +6,21 @@ import re
 import time
 
 MAKES = {
-    'Audi': 12, 'BMW': 15, 'Ford': 32, 'Honda': 34, 'Hyundai': 3,
-    'Jeep': 41, 'Kia': 42, 'Land Rover': 46, 'Lexus': 48, 'Mazda': 57,
-    'Mercedes-Benz': 59, 'Mitsubishi': 62, 'Nissan': 64, 'Opel': 67,
-    'Peugeot': 68, 'Porsche': 72, 'Renault': 74, 'Subaru': 83,
-    'Suzuki': 84, 'Tesla': 86, 'Toyota': 4, 'Volkswagen': 91, 'Volvo': 90
+    'Alfa Romeo': (99, 'alfa-romeo'), 'Audi': (12, 'audi'), 'Bentley': (105, 'bentley'),
+    'BMW': (15, 'bmw'), 'Cadillac': (104, 'cadillac'), 'Chevrolet': (101, 'chevrolet'),
+    'Chrysler': (103, 'chrysler'), 'Citroen': (93, 'citroen'), 'CUPRA': (111, 'cupra'),
+    'Dacia': (96, 'dacia'), 'Dodge': (102, 'dodge'), 'Ferrari': (108, 'ferrari'),
+    'Fiat': (97, 'fiat'), 'Ford': (32, 'ford'), 'Honda': (34, 'honda'),
+    'Hyundai': (3, 'hyundai'), 'Infiniti': (110, 'infiniti'), 'Jaguar': (98, 'jaguar'),
+    'Jeep': (41, 'jeep'), 'Kia': (42, 'kia'), 'Lamborghini': (107, 'lamborghini'),
+    'Land Rover': (46, 'land-rover'), 'Lexus': (48, 'lexus'), 'Maserati': (106, 'maserati'),
+    'Mazda': (57, 'mazda'), 'Mercedes-Benz': (59, 'mercedes'), 'MINI': (95, 'mini'),
+    'Mitsubishi': (62, 'mitsubishi'), 'Nissan': (64, 'nissan'), 'Opel': (67, 'opel'),
+    'Peugeot': (68, 'peugeot'), 'Polestar': (112, 'polestar'), 'Porsche': (72, 'porsche'),
+    'Renault': (74, 'renault'), 'Rolls-Royce': (109, 'rolls-royce'), 'Saab': (100, 'saab'),
+    'SEAT': (94, 'seat'), 'Skoda': (83, 'skoda'), 'Subaru': (82, 'subaru'),
+    'Suzuki': (84, 'suzuki'), 'Tesla': (86, 'tesla'), 'Toyota': (4, 'toyota'),
+    'Volkswagen': (91, 'volkswagen'), 'Volvo': (90, 'volvo')
 }
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
@@ -20,7 +30,7 @@ FUEL_MAP = {
     'Plug-in Hybrid': 'Hübriid', 'Electric': 'Elekter', 'Gas': 'Gaasbensiin'
 }
 
-def parse_json_listings(html):
+def parse_json_listings(html, make_name):
     matches = re.findall(r'<script type="application/ld\+json">(.*?)</script>', html, re.DOTALL)
     listings = []
     for match in matches:
@@ -28,18 +38,18 @@ def parse_json_listings(html):
             data = json.loads(match)
             if isinstance(data, list):
                 for item in data:
-                    listing = parse_item(item)
+                    listing = parse_item(item, make_name)
                     if listing:
                         listings.append(listing)
             elif isinstance(data, dict):
-                listing = parse_item(data)
+                listing = parse_item(data, make_name)
                 if listing:
                     listings.append(listing)
         except:
             pass
     return listings
 
-def parse_item(item):
+def parse_item(item, make_name):
     if item.get('@type') != 'Product':
         return None
     try:
@@ -66,42 +76,34 @@ def parse_item(item):
         else:
             transmission = transmission_raw
         return {
-            'url': url,
-            'title': name,
-            'model': model,
+            'url': url, 'title': name, 'model': model, 'make': make_name,
             'description': item.get('description', '')[:200] if item.get('description') else None,
-            'price_eur': int(price),
-            'year': int(year) if year else None,
+            'price_eur': int(price), 'year': int(year) if year else None,
             'mileage_km': int(mileage) if mileage else None,
-            'fuel': fuel,
-            'transmission': transmission,
-            'body': item.get('bodyType'),
-            'drive': None,
-            'image_url': image_url,
-            'source': 'autoportaal'
+            'fuel': fuel, 'transmission': transmission,
+            'body': item.get('bodyType'), 'drive': None,
+            'image_url': image_url, 'source': 'autoportaal'
         }
     except:
         return None
 
-def scrape_make(page, make_name, make_id):
+def scrape_make(page, make_name, make_id, make_slug):
     total = 0
     page_num = 0
     while True:
-        url = f"https://autoportaal.ee/et/{make_name.lower().replace(' ', '-').replace('-benz', '')}?ok=1&make_id={make_id}&page={page_num}"
+        url = f"https://autoportaal.ee/et/{make_slug}?ok=1&make_id={make_id}&page={page_num}"
         print(f"  Page {page_num + 1}...")
         page.goto(url, timeout=30000)
         page.wait_for_timeout(3000)
         html = page.content()
-        listings = parse_json_listings(html)
+        listings = parse_json_listings(html, make_name)
         if not listings:
-            print("  No listings found, stopping.")
             break
         supabase.table('listings').upsert(listings, on_conflict='url').execute()
         total += len(listings)
         print(f"    Saved {len(listings)} listings")
         next_btn = page.query_selector('a[href*="page="]')
         if not next_btn:
-            print("  No next page, done.")
             break
         page_num += 1
         time.sleep(2)
@@ -111,9 +113,9 @@ with sync_playwright() as p:
     browser = p.chromium.launch(headless=True)
     page = browser.new_page()
     grand_total = 0
-    for make_name, make_id in MAKES.items():
+    for make_name, (make_id, make_slug) in MAKES.items():
         print(f"\nScraping {make_name}...")
-        count = scrape_make(page, make_name, make_id)
+        count = scrape_make(page, make_name, make_id, make_slug)
         print(f"  {make_name}: {count} listings")
         grand_total += count
         time.sleep(3)
