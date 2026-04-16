@@ -108,7 +108,7 @@ def scrape_make(page, make_name, make_id):
         supabase.table("listings").upsert(new_listings, on_conflict="url").execute()
         all_listings.extend(new_listings)
         print(f"    Saved {len(new_listings)} listings")
-        next_button = page.query_selector("a:has-text('jargmine')")
+        next_button = page.query_selector("a:has-text('järgmine')")
         if not next_button:
             break
         offset += 50
