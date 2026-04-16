@@ -18,6 +18,15 @@ MAKES = {
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
+def extract_model(title, make_name):
+    if not title or not make_name:
+        return None
+    rest = title[len(make_name):].strip()
+    match = re.match(r'^((?:[A-Za-z0-9\-]+)(?:\s+[A-Za-z][A-Za-z0-9\-]*)*)(?:\s+\d|$)', rest)
+    if match:
+        return match.group(1).strip() or None
+    return None
+
 def parse_listing(text, href, style='', make_name=''):
     image_url = None
     if style:
@@ -29,7 +38,7 @@ def parse_listing(text, href, style='', make_name=''):
         "url": href, "image_url": image_url, "title": None, "description": None,
         "price_eur": None, "year": None, "mileage_km": None, "fuel": None,
         "transmission": None, "body": None, "drive": None, "source": "auto24",
-        "make": make_name
+        "make": make_name, "model": None
     }
     for line in lines:
         price_match = re.search(r"([\d\s\xa0]+)\s*€", line)
@@ -67,6 +76,7 @@ def parse_listing(text, href, style='', make_name=''):
             continue
         if listing["title"] and listing["description"] is None and re.search(r"[A-Za-z]", line) and "€" not in line:
             listing["description"] = line
+    listing["model"] = extract_model(listing["title"], make_name)
     return listing
 
 def scrape_make(page, make_name, make_id):

@@ -53,7 +53,7 @@ export default function Home() {
 
   function buildQuery(q) {
     if (make) q = q.eq('make', make)
-    if (model) q = q.eq('model', model)
+    if (model) q = q.ilike('model', model)
     if (bodyType) q = q.eq('body', bodyType)
     if (drive) q = q.eq('drive', drive)
     if (fuel) q = q.eq('fuel', fuel)
