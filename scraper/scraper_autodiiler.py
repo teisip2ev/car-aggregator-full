@@ -59,7 +59,7 @@ def parse_listing(item, make_name):
         image_url = images[0].get('small') if images else None
         description = item.get('seo', {}).get('description', '')
         return {
-            'url': url, 'title': name, 'model': model, 'make': make_name,
+            'url': url, 'title': name, 'model': model, 'make': item.get('brand', {}).get('name') or make_name,
             'description': description[:200] if description else None,
             'price_eur': int(price), 'year': year,
             'mileage_km': int(mileage) if mileage else None,
