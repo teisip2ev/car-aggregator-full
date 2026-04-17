@@ -5,6 +5,60 @@ import { supabase } from './lib/supabase'
 const MAKES = ['Alfa Romeo','Audi','Bentley','BMW','Cadillac','Chevrolet','Chrysler','Citroen','CUPRA','Dacia','Dodge','Ferrari','Fiat','Ford','Honda','Hyundai','Infiniti','Jaguar','Jeep','Kia','Lamborghini','Land Rover','Lexus','Maserati','Mazda','Mercedes-Benz','MINI','Mitsubishi','Nissan','Opel','Peugeot','Polestar','Porsche','Renault','Rolls-Royce','Saab','SEAT','Skoda','Subaru','Suzuki','Tesla','Toyota','Volkswagen','Volvo']
 const PAGE_SIZE = 40
 
+function PriceTag({ car }) {
+  const [open, setOpen] = useState(false)
+
+  if (!car.market_median || car.price_score === null || car.price_score === undefined) {
+    return (
+      <div className="relative inline-block">
+        <button
+          onClick={e => { e.preventDefault(); setOpen(!open) }}
+          className="text-xs px-2 py-0.5 rounded border font-medium border-gray-200 bg-gray-50 text-gray-400 hover:opacity-80 transition"
+        >
+          Hinnavõrdlus puudub
+        </button>
+        {open && (
+          <div className="absolute bottom-7 right-0 z-10 bg-white border border-gray-200 rounded-lg shadow-lg p-3 w-64 text-xs text-gray-700" onClick={e => e.preventDefault()}>
+            <p className="font-semibold mb-1">Hinnavõrdlus puudub</p>
+            <p className="text-gray-500">Meil ei ole piisavalt andmeid, et selle auto hinnaskoori arvutada. Hinnaanalüüs vajab vähemalt 3 sarnast autot (sama mark, mudel, aasta, läbisõit ja võimsus).</p>
+            <button onClick={e => { e.preventDefault(); setOpen(false) }} className="mt-2 text-blue-500 hover:underline">Sulge</button>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  const label = car.price_score <= -15 ? 'Väga soodne hind' :
+    car.price_score <= -5 ? 'Soodne hind' :
+    car.price_score <= 5 ? 'Keskmine hind' :
+    car.price_score <= 15 ? 'Kõrgem hind' : 'Kõrge hind'
+
+  const color = car.price_score <= -5 ? 'bg-green-100 text-green-700 border-green-200' :
+    car.price_score <= 5 ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
+    'bg-red-100 text-red-600 border-red-200'
+
+  return (
+    <div className="relative inline-block">
+      <button
+        onClick={e => { e.preventDefault(); setOpen(!open) }}
+        className={`text-xs px-2 py-0.5 rounded border font-medium cursor-pointer hover:opacity-80 transition ${color}`}
+      >
+        {label} ⓘ
+      </button>
+      {open && (
+        <div className="absolute bottom-7 right-0 z-10 bg-white border border-gray-200 rounded-lg shadow-lg p-3 w-56 text-xs text-gray-700" onClick={e => e.preventDefault()}>
+          <p className="font-semibold mb-2">Hinna analüüs</p>
+          <p>Mediaan: <span className="font-medium">{car.market_median?.toLocaleString()} €</span></p>
+          <p>Vahemik: <span className="font-medium">{car.market_min?.toLocaleString()} – {car.market_max?.toLocaleString()} €</span></p>
+          <p>See kuulutus: <span className="font-medium">{car.price_eur?.toLocaleString()} €</span></p>
+          <p className="mt-2 text-gray-400">Põhineb {car.market_count} sarnase auto hindadel (sama mark, mudel, aasta, läbisõit, võimsus)</p>
+          <button onClick={e => { e.preventDefault(); setOpen(false) }} className="mt-2 text-blue-500 hover:underline">Sulge</button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function Home() {
   const [listings, setListings] = useState([])
   const [models, setModels] = useState([])
@@ -214,19 +268,15 @@ export default function Home() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row gap-4 items-start">
-        {/* Sidebar desktop */}
         <div className="hidden md:block w-56 flex-shrink-0 sticky top-4">
           {sidebar}
         </div>
-
-        {/* Sidebar mobile */}
         {showFilters && (
           <div className="md:hidden w-full">
             {sidebar}
           </div>
         )}
 
-        {/* Main */}
         <div className="flex-1 min-w-0 w-full">
           <div className="flex items-center justify-between mb-3 bg-white border border-gray-200 rounded-lg px-4 py-2">
             <p className="text-sm text-gray-600">{total.toLocaleString()} kuulutust</p>
@@ -267,6 +317,7 @@ export default function Home() {
                       </div>
                       <div className="flex-shrink-0 text-right">
                         <p className="text-lg sm:text-xl font-bold text-blue-600">{car.price_eur?.toLocaleString()} €</p>
+                        <PriceTag car={car} />
                       </div>
                     </div>
                     <div className="flex flex-wrap items-center gap-x-2 sm:gap-x-3 gap-y-1 mt-2 text-xs sm:text-sm text-gray-500">
