@@ -5,23 +5,31 @@ import { supabase } from './lib/supabase'
 const MAKES = ['Alfa Romeo','Audi','Bentley','BMW','Cadillac','Chevrolet','Chrysler','Citroen','CUPRA','Dacia','Dodge','Ferrari','Fiat','Ford','Honda','Hyundai','Infiniti','Jaguar','Jeep','Kia','Lamborghini','Land Rover','Lexus','Maserati','Mazda','Mercedes-Benz','MINI','Mitsubishi','Nissan','Opel','Peugeot','Polestar','Porsche','Renault','Rolls-Royce','Saab','SEAT','Skoda','Subaru','Suzuki','Tesla','Toyota','Volkswagen','Volvo']
 const PAGE_SIZE = 40
 
-function PriceTag({ car }) {
-  const [open, setOpen] = useState(false)
+function PriceTag({ car, openPopup, setOpenPopup }) {
+  const open = openPopup === car.id
+
+  useEffect(() => {
+    if (!open) return
+    function handleClick(e) {
+      if (!e.target.closest('[data-pricetag]')) setOpenPopup(null)
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [open])
 
   if (!car.market_median || car.price_score === null || car.price_score === undefined) {
     return (
-      <div className="relative inline-block">
+      <div className="relative inline-block" data-pricetag>
         <button
-          onClick={e => { e.preventDefault(); setOpen(!open) }}
+          onClick={e => { e.preventDefault(); setOpenPopup(open ? null : car.id) }}
           className="text-xs px-2 py-0.5 rounded border font-medium border-gray-200 bg-gray-50 text-gray-400 hover:opacity-80 transition"
         >
           Hinnavõrdlus puudub
         </button>
         {open && (
-          <div className="absolute bottom-7 right-0 z-10 bg-white border border-gray-200 rounded-lg shadow-lg p-3 w-64 text-xs text-gray-700" onClick={e => e.preventDefault()}>
+          <div className="absolute top-6 right-0 z-20 bg-white border border-gray-200 rounded-lg shadow-lg p-3 w-64 text-xs text-gray-700" data-pricetag>
             <p className="font-semibold mb-1">Hinnavõrdlus puudub</p>
             <p className="text-gray-500">Meil ei ole piisavalt andmeid, et selle auto hinnaskoori arvutada. Hinnaanalüüs vajab vähemalt 3 sarnast autot (sama mark, mudel, aasta, läbisõit ja võimsus).</p>
-            <button onClick={e => { e.preventDefault(); setOpen(false) }} className="mt-2 text-blue-500 hover:underline">Sulge</button>
           </div>
         )}
       </div>
@@ -38,21 +46,20 @@ function PriceTag({ car }) {
     'bg-red-100 text-red-600 border-red-200'
 
   return (
-    <div className="relative inline-block">
+    <div className="relative inline-block" data-pricetag>
       <button
-        onClick={e => { e.preventDefault(); setOpen(!open) }}
+        onClick={e => { e.preventDefault(); setOpenPopup(open ? null : car.id) }}
         className={`text-xs px-2 py-0.5 rounded border font-medium cursor-pointer hover:opacity-80 transition ${color}`}
       >
         {label} ⓘ
       </button>
       {open && (
-        <div className="absolute bottom-7 right-0 z-10 bg-white border border-gray-200 rounded-lg shadow-lg p-3 w-56 text-xs text-gray-700" onClick={e => e.preventDefault()}>
+        <div className="absolute top-6 right-0 z-20 bg-white border border-gray-200 rounded-lg shadow-lg p-3 w-56 text-xs text-gray-700" data-pricetag>
           <p className="font-semibold mb-2">Hinna analüüs</p>
           <p>Mediaan: <span className="font-medium">{car.market_median?.toLocaleString()} €</span></p>
           <p>Vahemik: <span className="font-medium">{car.market_min?.toLocaleString()} – {car.market_max?.toLocaleString()} €</span></p>
           <p>See kuulutus: <span className="font-medium">{car.price_eur?.toLocaleString()} €</span></p>
           <p className="mt-2 text-gray-400">Põhineb {car.market_count} sarnase auto hindadel (sama mark, mudel, aasta, läbisõit, võimsus)</p>
-          <button onClick={e => { e.preventDefault(); setOpen(false) }} className="mt-2 text-blue-500 hover:underline">Sulge</button>
         </div>
       )}
     </div>
@@ -64,6 +71,7 @@ export default function Home() {
   const [models, setModels] = useState([])
   const [loading, setLoading] = useState(true)
   const [showFilters, setShowFilters] = useState(false)
+  const [openPopup, setOpenPopup] = useState(null)
   const [make, setMake] = useState('')
   const [model, setModel] = useState('')
   const [bodyType, setBodyType] = useState('')
@@ -301,8 +309,8 @@ export default function Home() {
             <div className="space-y-2">
               {listings.map(car => (
                 <a key={car.id} href={car.url} target="_blank" rel="noopener noreferrer"
-                  className="flex bg-white border border-gray-200 rounded-lg overflow-hidden hover:border-blue-400 hover:shadow-md transition-all duration-150 group">
-                  <div className="w-36 sm:w-52 h-28 sm:h-36 flex-shrink-0 bg-gray-100 overflow-hidden">
+                  className="flex bg-white border border-gray-200 rounded-lg hover:border-blue-400 hover:shadow-md transition-all duration-150 group relative">
+                  <div className="w-36 sm:w-52 h-28 sm:h-36 flex-shrink-0 bg-gray-100 overflow-hidden rounded-l-lg">
                     {car.image_url ? (
                       <img src={car.image_url} alt={car.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" />
                     ) : (
@@ -317,7 +325,7 @@ export default function Home() {
                       </div>
                       <div className="flex-shrink-0 text-right">
                         <p className="text-lg sm:text-xl font-bold text-blue-600">{car.price_eur?.toLocaleString()} €</p>
-                        <PriceTag car={car} />
+                        <PriceTag car={car} openPopup={openPopup} setOpenPopup={setOpenPopup} />
                       </div>
                     </div>
                     <div className="flex flex-wrap items-center gap-x-2 sm:gap-x-3 gap-y-1 mt-2 text-xs sm:text-sm text-gray-500">
