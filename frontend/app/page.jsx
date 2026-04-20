@@ -5,10 +5,32 @@ import { supabase } from './lib/supabase'
 const MAKES = ['Alfa Romeo','Audi','Bentley','BMW','Cadillac','Chevrolet','Chrysler','Citroen','CUPRA','Dacia','Dodge','Ferrari','Fiat','Ford','Honda','Hyundai','Infiniti','Jaguar','Jeep','Kia','Lamborghini','Land Rover','Lexus','Maserati','Mazda','Mercedes-Benz','MINI','Mitsubishi','Nissan','Opel','Peugeot','Polestar','Porsche','Renault','Rolls-Royce','Saab','SEAT','Skoda','Subaru','Suzuki','Tesla','Toyota','Volkswagen','Volvo']
 const PAGE_SIZE = 40
 
+function HistoryCheck() {
+  const [open, setOpen] = useState(false)
+  const [plate, setPlate] = useState('')
+  return (
+    <div className="relative inline-block">
+      <button onClick={e => { e.preventDefault(); setOpen(!open) }} className="text-xs px-2 py-0.5 rounded border font-medium border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100 transition">
+        Kontrolli tausta
+      </button>
+      {open && (
+        <div className="absolute bottom-7 left-0 z-20 bg-white border border-gray-200 rounded-lg shadow-lg p-3 w-64 text-xs text-gray-700" onClick={e => e.preventDefault()}>
+          <p className="font-semibold mb-2">Kontrolli sõiduki tausta</p>
+          <input type="text" placeholder="Registreerimismärk või VIN" value={plate} onChange={e => setPlate(e.target.value.toUpperCase())} className="w-full border border-gray-200 rounded px-2 py-1.5 text-sm mb-2 focus:outline-none focus:border-blue-500" />
+          <div className="flex gap-2">
+            <a href="https://eteenindus.mnt.ee/public/soidukTaustakontroll.jsf?lang=et" target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)} className="flex-1 text-center bg-blue-600 text-white py-1.5 rounded text-xs font-medium hover:bg-blue-700 transition">MNT taustakontroll</a>
+            <a href="https://www.lkf.ee/et/kahjukontroll" target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)} className="flex-1 text-center bg-orange-500 text-white py-1.5 rounded text-xs font-medium hover:bg-orange-600 transition">LKF kahjukontroll</a>
+          </div>
+          <p className="text-gray-400 mt-2">Sisesta märk ja ava kontroll uues aknas</p>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function PriceTag({ car, openPopup, setOpenPopup }) {
   const open = openPopup === car.id
   const popupClass = "absolute top-6 right-0 z-20 bg-white border border-gray-200 rounded-lg shadow-lg p-3 w-56 text-xs text-gray-700"
-
   useEffect(() => {
     if (!open) return
     function handleClick(e) {
@@ -17,50 +39,35 @@ function PriceTag({ car, openPopup, setOpenPopup }) {
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
   }, [open])
-
   if (!car.market_median || car.price_score === null || car.price_score === undefined) {
     return (
       <div className="relative inline-block" data-pricetag>
-        <button
-          onClick={e => { e.preventDefault(); setOpenPopup(open ? null : car.id) }}
-          className="text-xs px-2 py-0.5 rounded border font-medium border-gray-200 bg-gray-50 text-gray-400 hover:opacity-80 transition"
-        >
+        <button onClick={e => { e.preventDefault(); setOpenPopup(open ? null : car.id) }} className="text-xs px-2 py-0.5 rounded border font-medium border-gray-200 bg-gray-50 text-gray-400 hover:opacity-80 transition">
           Hinnavõrdlus puudub
         </button>
         {open && (
           <div className={popupClass} data-pricetag style={{right: 0, maxWidth: 'calc(100vw - 4rem)'}}>
             <p className="font-semibold mb-1">Hinnavõrdlus puudub</p>
-            <p className="text-gray-500">Meil ei ole piisavalt andmeid, et selle auto hinnaskoori arvutada. Hinnaanalüüs vajab vähemalt 3 sarnast autot (sama mark, mudel, aasta, läbisõit ja võimsus).</p>
+            <p className="text-gray-500">Meil ei ole piisavalt andmeid, et selle auto hinnaskoori arvutada. Hinnaanalüüs vajab vähemalt 3 sarnast autot.</p>
           </div>
         )}
       </div>
     )
   }
-
-  const label = car.price_score <= -15 ? 'Väga soodne hind' :
-    car.price_score <= -5 ? 'Soodne hind' :
-    car.price_score <= 5 ? 'Keskmine hind' :
-    car.price_score <= 15 ? 'Kõrgem hind' : 'Kõrge hind'
-
-  const color = car.price_score <= -5 ? 'bg-green-100 text-green-700 border-green-200' :
-    car.price_score <= 5 ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
-    'bg-red-100 text-red-600 border-red-200'
-
+  const label = car.price_score <= -15 ? 'Väga soodne hind' : car.price_score <= -5 ? 'Soodne hind' : car.price_score <= 5 ? 'Keskmine hind' : car.price_score <= 15 ? 'Kõrgem hind' : 'Kõrge hind'
+  const color = car.price_score <= -5 ? 'bg-green-100 text-green-700 border-green-200' : car.price_score <= 5 ? 'bg-yellow-50 text-yellow-700 border-yellow-200' : 'bg-red-100 text-red-600 border-red-200'
   return (
     <div className="relative inline-block" data-pricetag>
-      <button
-        onClick={e => { e.preventDefault(); setOpenPopup(open ? null : car.id) }}
-        className={'text-xs px-2 py-0.5 rounded border font-medium cursor-pointer hover:opacity-80 transition ' + color}
-      >
-        {label} i
+      <button onClick={e => { e.preventDefault(); setOpenPopup(open ? null : car.id) }} className={'text-xs px-2 py-0.5 rounded border font-medium cursor-pointer hover:opacity-80 transition ' + color}>
+        {label} ⓘ
       </button>
       {open && (
         <div className={popupClass} data-pricetag style={{right: 0, maxWidth: 'calc(100vw - 4rem)'}}>
           <p className="font-semibold mb-2">Hinna analüüs</p>
-          <p>Mediaan: <span className="font-medium">{car.market_median?.toLocaleString()} EUR</span></p>
-          <p>Vahemik: <span className="font-medium">{car.market_min?.toLocaleString()} - {car.market_max?.toLocaleString()} EUR</span></p>
-          <p>See kuulutus: <span className="font-medium">{car.price_eur?.toLocaleString()} EUR</span></p>
-          <p className="mt-2 text-gray-400">Pohineb {car.market_count} sarnase auto hindadel</p>
+          <p>Mediaan: <span className="font-medium">{car.market_median?.toLocaleString()} €</span></p>
+          <p>Vahemik: <span className="font-medium">{car.market_min?.toLocaleString()} – {car.market_max?.toLocaleString()} €</span></p>
+          <p>See kuulutus: <span className="font-medium">{car.price_eur?.toLocaleString()} €</span></p>
+          <p className="mt-2 text-gray-400">Põhineb {car.market_count} sarnase auto hindadel</p>
         </div>
       )}
     </div>
@@ -92,10 +99,7 @@ export default function Home() {
   const [total, setTotal] = useState(0)
   const [filterCount, setFilterCount] = useState(0)
 
-  useEffect(() => {
-    fetchListings(0, 'created_at', 'desc')
-    fetchCount()
-  }, [])
+  useEffect(() => { fetchListings(0, 'created_at', 'desc'); fetchCount() }, [])
 
   useEffect(() => {
     if (make) loadModels(make)
@@ -104,11 +108,7 @@ export default function Home() {
   }, [make])
 
   async function loadModels(selectedMake) {
-    const { data } = await supabase
-      .from('listings')
-      .select('model')
-      .eq('make', selectedMake)
-      .not('model', 'is', null)
+    const { data } = await supabase.from('listings').select('model').eq('make', selectedMake).not('model', 'is', null)
     if (data) {
       const unique = [...new Set(data.map(d => d.model))].filter(Boolean).sort()
       setModels(unique)
@@ -145,12 +145,7 @@ export default function Home() {
     const sortOrder = sd || sortDir
     const from = pageNum * PAGE_SIZE
     const to = from + PAGE_SIZE - 1
-    let q = supabase
-      .from('listings')
-      .select('*', { count: 'exact' })
-      .gte('price_eur', 100)
-      .order(sortField, { ascending: sortOrder === 'asc' })
-      .range(from, to)
+    let q = supabase.from('listings').select('*', { count: 'exact' }).gte('price_eur', 100).order(sortField, { ascending: sortOrder === 'asc' }).range(from, to)
     q = buildQuery(q)
     const { data, error, count } = await q
     if (error) { console.error(error); setLoading(false); return }
@@ -180,86 +175,41 @@ export default function Home() {
   const sidebar = (
     <div className="bg-white border border-gray-200 rounded-lg p-3 space-y-2.5">
       <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Mark ja mudel</p>
-      <select value={make} onChange={e => setMake(e.target.value)} className={sel}>
-        <option value="">Kõik margid</option>
-        {MAKES.map(m => <option key={m} value={m}>{m}</option>)}
-      </select>
-      <select value={model} onChange={e => setModel(e.target.value)} disabled={!make} className={sel + ' disabled:opacity-40'}>
-        <option value="">Kõik mudelid</option>
-        {models.map(m => <option key={m} value={m}>{m}</option>)}
-      </select>
+      <select value={make} onChange={e => setMake(e.target.value)} className={sel}><option value="">Kõik margid</option>{MAKES.map(m => <option key={m} value={m}>{m}</option>)}</select>
+      <select value={model} onChange={e => setModel(e.target.value)} disabled={!make} className={sel + ' disabled:opacity-40'}><option value="">Kõik mudelid</option>{models.map(m => <option key={m} value={m}>{m}</option>)}</select>
       <input type="text" placeholder="Täpsustus (nt. M-pakett, AMG...)" value={search} onChange={e => setSearch(e.target.value)} onKeyDown={e => e.key === 'Enter' && doSearch()} className={inp} />
-
       <hr className="border-gray-100" />
       <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Keretüüp</p>
       <select value={bodyType} onChange={e => setBodyType(e.target.value)} className={sel}>
-        <option value="">Kõik</option>
-        <option value="Sedaan">Sedaan</option>
-        <option value="Universaal">Universaal</option>
-        <option value="Luukpära">Luukpara</option>
-        <option value="Maastur">Maastur</option>
-        <option value="Kupee">Kupee</option>
-        <option value="Kabriolett">Kabriolett</option>
-        <option value="Minivan">Minivan</option>
+        <option value="">Kõik</option><option value="Sedaan">Sedaan</option><option value="Universaal">Universaal</option><option value="Luukpära">Luukpära</option><option value="Maastur">Maastur</option><option value="Kupee">Kupee</option><option value="Kabriolett">Kabriolett</option><option value="Minivan">Minivan</option>
       </select>
-
       <hr className="border-gray-100" />
       <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Aasta</p>
-      <div className="flex gap-1">
-        <input type="number" placeholder="Alates" value={minYear} onChange={e => setMinYear(e.target.value)} className={inp} />
-        <input type="number" placeholder="Kuni" value={maxYear} onChange={e => setMaxYear(e.target.value)} className={inp} />
-      </div>
-
+      <div className="flex gap-1"><input type="number" placeholder="Alates" value={minYear} onChange={e => setMinYear(e.target.value)} className={inp} /><input type="number" placeholder="Kuni" value={maxYear} onChange={e => setMaxYear(e.target.value)} className={inp} /></div>
       <hr className="border-gray-100" />
-      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Hind (EUR)</p>
-      <div className="flex gap-1">
-        <input type="number" placeholder="Alates" value={minPrice} onChange={e => setMinPrice(e.target.value)} className={inp} />
-        <input type="number" placeholder="Kuni" value={maxPrice} onChange={e => setMaxPrice(e.target.value)} className={inp} />
-      </div>
-
+      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Hind (€)</p>
+      <div className="flex gap-1"><input type="number" placeholder="Alates" value={minPrice} onChange={e => setMinPrice(e.target.value)} className={inp} /><input type="number" placeholder="Kuni" value={maxPrice} onChange={e => setMaxPrice(e.target.value)} className={inp} /></div>
       <hr className="border-gray-100" />
       <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Läbisõit (km)</p>
-      <div className="flex gap-1">
-        <input type="number" placeholder="Alates" value={minMileage} onChange={e => setMinMileage(e.target.value)} className={inp} />
-        <input type="number" placeholder="Kuni" value={maxMileage} onChange={e => setMaxMileage(e.target.value)} className={inp} />
-      </div>
-
+      <div className="flex gap-1"><input type="number" placeholder="Alates" value={minMileage} onChange={e => setMinMileage(e.target.value)} className={inp} /><input type="number" placeholder="Kuni" value={maxMileage} onChange={e => setMaxMileage(e.target.value)} className={inp} /></div>
       <hr className="border-gray-100" />
       <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Kütus</p>
       <select value={fuel} onChange={e => setFuel(e.target.value)} className={sel}>
-        <option value="">Kõik</option>
-        <option value="Bensiin">Bensiin</option>
-        <option value="Diisel">Diisel</option>
-        <option value="Elekter">Elekter</option>
-        <option value="Hübriid">Hübriid</option>
-        <option value="Gaasbensiin">Gaas / LPG</option>
+        <option value="">Kõik</option><option value="Bensiin">Bensiin</option><option value="Diisel">Diisel</option><option value="Elekter">Elekter</option><option value="Hübriid">Hübriid</option><option value="Gaasbensiin">Gaas / LPG</option>
       </select>
-
       <hr className="border-gray-100" />
       <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Käigukast</p>
       <select value={transmission} onChange={e => setTransmission(e.target.value)} className={sel}>
-  <option value="">Kõik</option>
-  <option value="Automaat">Automaat</option>
-  <option value="Käsitsi">Käsitsi</option>
-  <option value="Poolautomaat">Poolautomaat</option>
-</select>
-
+        <option value="">Kõik</option><option value="Automaat">Automaat</option><option value="Käsitsi">Käsitsi</option><option value="Poolautomaat">Poolautomaat</option>
+      </select>
       <hr className="border-gray-100" />
       <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Vedav sild</p>
       <select value={drive} onChange={e => setDrive(e.target.value)} className={sel}>
-        <option value="">Kõik</option>
-        <option value="Esivedu">Esivedu</option>
-        <option value="Tagavedu">Tagavedu</option>
-        <option value="Nelikvedu">Nelikvedu</option>
+        <option value="">Kõik</option><option value="Esivedu">Esivedu</option><option value="Tagavedu">Tagavedu</option><option value="Nelikvedu">Nelikvedu</option>
       </select>
-
       <hr className="border-gray-100" />
-      <button onClick={doSearch} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded text-sm transition">
-        OTSI ({filterCount.toLocaleString()})
-      </button>
-      <button onClick={reset} className="w-full border border-gray-200 text-gray-500 py-1.5 rounded text-sm hover:bg-gray-50 transition">
-        Tuhjenda
-      </button>
+      <button onClick={doSearch} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded text-sm transition">OTSI ({filterCount.toLocaleString()})</button>
+      <button onClick={reset} className="w-full border border-gray-200 text-gray-500 py-1.5 rounded text-sm hover:bg-gray-50 transition">Tühjenda</button>
     </div>
   )
 
@@ -269,55 +219,37 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
           <button onClick={reset} className="flex items-baseline gap-2 hover:opacity-80 transition">
             <span className="text-xl font-bold text-blue-600">Autootsing</span>
-            <span className="text-gray-400 text-sm hidden sm:block">Eesti autokuulutused uhes kohas</span>
+            <span className="text-gray-400 text-sm hidden sm:block">Eesti autokuulutused ühes kohas</span>
           </button>
           <button onClick={() => setShowFilters(!showFilters)} className="ml-auto md:hidden border border-gray-200 rounded px-3 py-1.5 text-sm text-gray-600">
             {showFilters ? 'Peida filtrid' : 'Filtrid'}
           </button>
         </div>
       </div>
-
       <div className="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row gap-4 items-start">
-        <div className="hidden md:block w-56 flex-shrink-0 sticky top-4">
-          {sidebar}
-        </div>
-        {showFilters && (
-          <div className="md:hidden w-full">
-            {sidebar}
-          </div>
-        )}
-
+        <div className="hidden md:block w-56 flex-shrink-0 sticky top-4">{sidebar}</div>
+        {showFilters && <div className="md:hidden w-full">{sidebar}</div>}
         <div className="flex-1 min-w-0 w-full">
           <div className="flex items-center justify-between mb-3 bg-white border border-gray-200 rounded-lg px-4 py-2">
             <p className="text-sm text-gray-600">{total.toLocaleString()} kuulutust</p>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-400 hidden sm:block">Jarjesta:</span>
+              <span className="text-sm text-gray-400 hidden sm:block">Järjesta:</span>
               <select value={sortBy} onChange={e => { setSortBy(e.target.value); fetchListings(0, e.target.value, sortDir) }} className="text-sm border border-gray-200 rounded px-2 py-1 bg-white text-gray-900">
-                <option value="created_at">Uusimad</option>
-                <option value="price_eur">Hind</option>
-                <option value="year">Aasta</option>
-                <option value="mileage_km">Läbisõit</option>
+                <option value="created_at">Uusimad</option><option value="price_eur">Hind</option><option value="year">Aasta</option><option value="mileage_km">Läbisõit</option>
               </select>
               <select value={sortDir} onChange={e => { setSortDir(e.target.value); fetchListings(0, sortBy, e.target.value) }} className="text-sm border border-gray-200 rounded px-2 py-1 bg-white text-gray-900">
-                <option value="desc">alla</option>
-                <option value="asc">ules</option>
+                <option value="desc">↓</option><option value="asc">↑</option>
               </select>
             </div>
           </div>
-
           {loading ? (
             <div className="text-center py-20 text-gray-400">Laen...</div>
           ) : (
             <div className="space-y-2">
               {listings.map(car => (
-                <a key={car.id} href={car.url} target="_blank" rel="noopener noreferrer"
-                  className="flex bg-white border border-gray-200 rounded-lg hover:border-blue-400 hover:shadow-md transition-all duration-150 group relative">
+                <a key={car.id} href={car.url} target="_blank" rel="noopener noreferrer" className="flex bg-white border border-gray-200 rounded-lg hover:border-blue-400 hover:shadow-md transition-all duration-150 group relative">
                   <div className="w-36 sm:w-52 h-28 sm:h-36 flex-shrink-0 bg-gray-100 overflow-hidden rounded-l-lg">
-                    {car.image_url ? (
-                      <img src={car.image_url} alt={car.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-300 text-xs">Pilt puudub</div>
-                    )}
+                    {car.image_url ? <img src={car.image_url} alt={car.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" /> : <div className="w-full h-full flex items-center justify-center text-gray-300 text-xs">Pilt puudub</div>}
                   </div>
                   <div className="flex-1 p-3 sm:p-4 min-w-0">
                     <div className="flex items-start justify-between gap-2">
@@ -325,10 +257,11 @@ export default function Home() {
                         <h3 className="font-semibold text-gray-900 truncate text-sm sm:text-base">{car.title}</h3>
                         <p className="text-xs text-gray-400 truncate mt-0.5 hidden sm:block">{car.description}</p>
                       </div>
-                      <div className="flex-shrink-0 text-right">
-                        <p className="text-lg sm:text-xl font-bold text-blue-600">{car.price_eur?.toLocaleString()} EUR</p>
-                        <PriceTag car={car} openPopup={openPopup} setOpenPopup={setOpenPopup} />
-                      </div>
+                      <div className="flex-shrink-0 text-right flex flex-col items-end gap-1">
+  <p className="text-lg sm:text-xl font-bold text-blue-600">{car.price_eur?.toLocaleString()} €</p>
+  <PriceTag car={car} openPopup={openPopup} setOpenPopup={setOpenPopup} />
+  <HistoryCheck />
+</div>
                     </div>
                     <div className="flex flex-wrap items-center gap-x-2 sm:gap-x-3 gap-y-1 mt-2 text-xs sm:text-sm text-gray-500">
                       {car.year && <span>{car.year}</span>}
@@ -338,31 +271,23 @@ export default function Home() {
                       {car.body && <><span className="text-gray-200 hidden sm:inline">|</span><span className="hidden sm:inline">{car.body}</span></>}
                       {car.drive && <><span className="text-gray-200 hidden sm:inline">|</span><span className="hidden sm:inline">{car.drive}</span></>}
                     </div>
-                    <div className="mt-2">
-                      <span className={'text-xs px-2 py-0.5 rounded font-medium ' + (
-                        car.source === 'auto24' ? 'bg-blue-100 text-blue-700' :
-                        car.source === 'autoportaal' ? 'bg-green-100 text-green-700' :
-                        car.source === 'autodiiler' ? 'bg-orange-100 text-orange-700' :
-                        car.source === 'veego' ? 'bg-purple-100 text-purple-700' :
-                        'bg-gray-100 text-gray-600'
-                      )}>{car.source}</span>
+                    <div className="mt-2 flex items-center gap-2 flex-wrap">
+                      <span className={'text-xs px-2 py-0.5 rounded font-medium ' + (car.source === 'auto24' ? 'bg-blue-100 text-blue-700' : car.source === 'autoportaal' ? 'bg-green-100 text-green-700' : car.source === 'autodiiler' ? 'bg-orange-100 text-orange-700' : car.source === 'veego' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-600')}>{car.source}</span>
+                      
                     </div>
                   </div>
                 </a>
               ))}
             </div>
           )}
-
           {totalPages > 1 && (
             <div className="flex justify-center gap-1 sm:gap-2 mt-6 pb-8">
-              <button onClick={() => fetchListings(page - 1)} disabled={page === 0} className="px-3 sm:px-4 py-2 border border-gray-200 rounded text-sm disabled:opacity-30 hover:bg-gray-50 bg-white text-gray-800 transition">prev</button>
+              <button onClick={() => fetchListings(page - 1)} disabled={page === 0} className="px-3 sm:px-4 py-2 border border-gray-200 rounded text-sm disabled:opacity-30 hover:bg-gray-50 bg-white text-gray-800 transition">←</button>
               {[...Array(Math.min(5, totalPages))].map((_, i) => {
                 const pageNum = Math.max(0, Math.min(page - 2, totalPages - 5)) + i
-                return (
-                  <button key={pageNum} onClick={() => fetchListings(pageNum)} className={'px-3 sm:px-4 py-2 border rounded text-sm transition ' + (pageNum === page ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-200 hover:bg-gray-50 bg-white text-gray-800')}>{pageNum + 1}</button>
-                )
+                return <button key={pageNum} onClick={() => fetchListings(pageNum)} className={'px-3 sm:px-4 py-2 border rounded text-sm transition ' + (pageNum === page ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-200 hover:bg-gray-50 bg-white text-gray-800')}>{pageNum + 1}</button>
               })}
-              <button onClick={() => fetchListings(page + 1)} disabled={page >= totalPages - 1} className="px-3 sm:px-4 py-2 border border-gray-200 rounded text-sm disabled:opacity-30 hover:bg-gray-50 bg-white text-gray-800 transition">next</button>
+              <button onClick={() => fetchListings(page + 1)} disabled={page >= totalPages - 1} className="px-3 sm:px-4 py-2 border border-gray-200 rounded text-sm disabled:opacity-30 hover:bg-gray-50 bg-white text-gray-800 transition">→</button>
             </div>
           )}
         </div>
