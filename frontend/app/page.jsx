@@ -74,6 +74,87 @@ function PriceTag({ car, openPopup, setOpenPopup }) {
   )
 }
 
+
+function FuelCost({ car }) {
+  const [open, setOpen] = useState(false)
+  const [km, setKm] = useState(15000)
+
+  useEffect(() => {
+    if (!open) return
+    function handleClick(e) {
+      if (!e.target.closest('[data-fuelcost]')) setOpen(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [open])
+
+  if (!car.fuel || car.fuel === 'Gaasbensiin') return null
+
+  const configs = {
+    'Bensiin': { consumption: 7.5, unit: 'l', price: 1.65, label: '7.5l/100km @ 1.65€/l' },
+    'Diisel': { consumption: 6.0, unit: 'l', price: 1.55, label: '6.0l/100km @ 1.55€/l' },
+    'Hübriid': { consumption: 5.0, unit: 'l', price: 1.65, label: '5.0l/100km @ 1.65€/l' },
+    'Elekter': { consumption: 18, unit: 'kWh', price: 0.18, label: '18kWh/100km @ 0.18€/kWh' },
+  }
+
+  const config = configs[car.fuel]
+  if (!config) return null
+
+  const annualCost = Math.round((km / 100) * config.consumption * config.price)
+
+  return (
+    <div className="relative inline-block" data-fuelcost>
+      <button
+        onClick={e => { e.preventDefault(); setOpen(!open) }}
+        className="text-xs px-2 py-0.5 rounded border font-medium border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100 transition"
+      >
+        Kulud ⓘ
+      </button>
+      {open && (
+<div className="absolute top-6 right-0 z-20 bg-white border border-gray-200 rounded-lg shadow-lg p-3 w-64 text-xs text-gray-700" data-fuelcost style={{maxWidth: 'calc(100vw - 4rem)'}} onClick={e => e.preventDefault()} onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()}>          <p className="font-semibold mb-2">Hinnanguline kütusekulu</p>
+          <div className="mb-3">
+            <div className="flex justify-between mb-1">
+              <span className="text-gray-500">Aastane läbisõit</span>
+              <span className="font-medium">{km.toLocaleString()} km</span>
+            </div>
+            <input
+              type="range"
+              min="5000"
+              max="50000"
+              step="1000"
+              value={km}
+              onChange={e => { e.stopPropagation(); setKm(parseInt(e.target.value)) }}
+onMouseDown={e => e.stopPropagation()}
+onTouchStart={e => e.stopPropagation()}
+className="w-full"
+onClick={e => e.preventDefault()}
+            />
+            <div className="flex justify-between text-gray-400 mt-0.5">
+              <span>5 000</span>
+              <span>50 000</span>
+            </div>
+          </div>
+          <div className="bg-gray-50 rounded p-2 mb-2">
+            <div className="flex justify-between">
+              <span className="text-gray-500">Kütus</span>
+              <span>{car.fuel}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500">Tarbimine</span>
+              <span>{config.label}</span>
+            </div>
+            <div className="flex justify-between font-semibold mt-1 pt-1 border-t border-gray-200">
+              <span>Aastane kütusekulu</span>
+              <span className="text-blue-600">~{annualCost.toLocaleString()} €</span>
+            </div>
+          </div>
+          <p className="text-gray-400">Hinnang põhineb keskmistel näitajatel. Tegelik kulu sõltub sõidustiilist.</p>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function Home() {
   const [listings, setListings] = useState([])
   const [models, setModels] = useState([])
@@ -287,8 +368,7 @@ export default function Home() {
           ) : (
             <div className="space-y-2">
               {listings.map(car => (
-                <a key={car.id} href={car.url} target="_blank" rel="noopener noreferrer" className="flex bg-white border border-gray-200 rounded-lg hover:border-blue-400 hover:shadow-md transition-all duration-150 group relative">
-                  <div className="w-36 sm:w-52 h-28 sm:h-36 flex-shrink-0 bg-gray-100 overflow-hidden rounded-l-lg">
+<a key={car.id} href={car.url} target="_blank" rel="noopener noreferrer" draggable="false" className="flex bg-white border border-gray-200 rounded-lg hover:border-blue-400 hover:shadow-md transition-all duration-150 group relative">                  <div className="w-36 sm:w-52 h-28 sm:h-36 flex-shrink-0 bg-gray-100 overflow-hidden rounded-l-lg">
                     {car.image_url ? <img src={car.image_url} alt={car.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" /> : <div className="w-full h-full flex items-center justify-center text-gray-300 text-xs">Pilt puudub</div>}
                   </div>
                   <div className="flex-1 p-3 sm:p-4 min-w-0">
@@ -301,6 +381,7 @@ export default function Home() {
                         <p className="text-lg sm:text-xl font-bold text-blue-600">{car.price_eur?.toLocaleString()} €</p>
                         <PriceTag car={car} openPopup={openPopup} setOpenPopup={setOpenPopup} />
                         <HistoryCheck />
+                        <FuelCost car={car} />
                       </div>
                     </div>
                     <div className="flex flex-wrap items-center gap-x-2 sm:gap-x-3 gap-y-1 mt-2 text-xs sm:text-sm text-gray-500">

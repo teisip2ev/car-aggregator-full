@@ -60,6 +60,8 @@ def parse_listing(item, make_name):
         transmission = 'Automaat' if gearbox == 'A' else 'Käsitsi' if gearbox == 'M' else None
         images = item.get('images', [])
         image_url = images[0].get('thumb_data_sm') if images else None
+        annual_tax = item.get('annual_tax')
+        registration_tax = item.get('registration_tax')
         return {
             'url': url, 'title': title, 'model': None, 'make': make_name,
             'description': None, 'price_eur': int(price),
@@ -67,7 +69,9 @@ def parse_listing(item, make_name):
             'mileage_km': int(mileage) if mileage else None,
             'fuel': fuel, 'transmission': transmission,
             'body': None, 'drive': None,
-            'image_url': image_url, 'source': 'veego'
+            'image_url': image_url, 'source': 'veego',
+            'annual_tax': int(annual_tax) if annual_tax else None,
+            'registration_tax': int(registration_tax) if registration_tax else None,
         }
     except:
         return None
