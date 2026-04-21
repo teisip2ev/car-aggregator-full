@@ -308,7 +308,7 @@ export default function Home() {
       <hr className="border-gray-100" />
       <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Käigukast</p>
       <select value={transmission} onChange={e => setTransmission(e.target.value)} className={sel}>
-        <option value="">Kõik</option><option value="Automaat">Automaat</option><option value="Käsitsi">Käsitsi</option><option value="Poolautomaat">Poolautomaat</option>
+        <option value="">Kõik</option><option value="Automaat">Automaat</option><option value="Manuaal">Manuaal</option><option value="Poolautomaat">Poolautomaat</option>
       </select>
       <hr className="border-gray-100" />
       <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Vedav sild</p>
@@ -384,14 +384,14 @@ export default function Home() {
                         <FuelCost car={car} />
                       </div>
                     </div>
-                    <div className="flex flex-wrap items-center gap-x-2 sm:gap-x-3 gap-y-1 mt-2 text-xs sm:text-sm text-gray-500">
-                      {car.year && <span>{car.year}</span>}
-                      {car.mileage_km && <><span className="text-gray-200">|</span><span>{car.mileage_km?.toLocaleString()} km</span></>}
-                      {car.fuel && <><span className="text-gray-200">|</span><span>{car.fuel}</span></>}
-                      {car.transmission && <><span className="text-gray-200">|</span><span>{car.transmission}</span></>}
-                      {car.body && <><span className="text-gray-200 hidden sm:inline">|</span><span className="hidden sm:inline">{car.body}</span></>}
-                      {car.drive && <><span className="text-gray-200 hidden sm:inline">|</span><span className="hidden sm:inline">{car.drive}</span></>}
-                    </div>
+                    <div className="flex flex-wrap items-center gap-y-0.5 mt-2 text-sm text-gray-500">
+  {car.year && <span className="font-bold text-gray-800 pr-3">{car.year}</span>}
+  {car.mileage_km && <><span className="text-gray-200 pr-3">|</span><span className="pr-3">{car.mileage_km?.toLocaleString()} km</span></>}
+  {car.fuel && <><span className="text-gray-200 pr-3">|</span><span className="pr-3">{car.fuel}</span></>}
+  {car.transmission && <><span className="text-gray-200 pr-3">|</span><span className="pr-3">{car.transmission}</span></>}
+  {car.body && <><span className="text-gray-200 pr-3 hidden sm:inline">|</span><span className="pr-3 hidden sm:inline">{car.body}</span></>}
+  {car.drive && <><span className="text-gray-200 pr-3 hidden sm:inline">|</span><span className="hidden sm:inline">{car.drive}</span></>}
+</div>
                     <div className="mt-2 flex items-center gap-2 flex-wrap">
                       <span className={'text-xs px-2 py-0.5 rounded font-medium ' + (car.source === 'auto24' ? 'bg-blue-100 text-blue-700' : car.source === 'autoportaal' ? 'bg-green-100 text-green-700' : car.source === 'autodiiler' ? 'bg-orange-100 text-orange-700' : car.source === 'veego' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-600')}>{car.source}</span>
                     </div>
