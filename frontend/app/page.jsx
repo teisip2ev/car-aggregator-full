@@ -98,8 +98,14 @@ export default function Home() {
   const [page, setPage] = useState(0)
   const [total, setTotal] = useState(0)
   const [filterCount, setFilterCount] = useState(0)
+  const [recentSearches, setRecentSearches] = useState([])
 
-  useEffect(() => { fetchListings(0, 'created_at', 'desc'); fetchCount() }, [])
+  useEffect(() => {
+    fetchListings(0, 'created_at', 'desc')
+    fetchCount()
+    const saved = localStorage.getItem('recentSearches')
+    if (saved) setRecentSearches(JSON.parse(saved))
+  }, [])
 
   useEffect(() => {
     if (make) loadModels(make)
@@ -156,7 +162,28 @@ export default function Home() {
     window.scrollTo(0, 0)
   }
 
-  function doSearch() { fetchListings(0); fetchCount() }
+  function saveSearch() {
+    const parts = [make, model, search, minYear && maxYear ? minYear + '-' + maxYear : minYear || maxYear, maxPrice ? 'kuni ' + parseInt(maxPrice).toLocaleString() + '€' : '', fuel, transmission].filter(Boolean)
+    if (!parts.length) return
+    const label = parts.join(' · ')
+    const entry = { label, filters: { make, model, search, minYear, maxYear, minPrice, maxPrice, minMileage, maxMileage, fuel, transmission, bodyType, drive } }
+    const updated = [entry, ...recentSearches.filter(r => r.label !== label)].slice(0, 5)
+    setRecentSearches(updated)
+    localStorage.setItem('recentSearches', JSON.stringify(updated))
+  }
+
+  function applySearch(entry) {
+    const f = entry.filters
+    setMake(f.make || ''); setModel(f.model || ''); setSearch(f.search || '')
+    setMinYear(f.minYear || ''); setMaxYear(f.maxYear || '')
+    setMinPrice(f.minPrice || ''); setMaxPrice(f.maxPrice || '')
+    setMinMileage(f.minMileage || ''); setMaxMileage(f.maxMileage || '')
+    setFuel(f.fuel || ''); setTransmission(f.transmission || '')
+    setBodyType(f.bodyType || ''); setDrive(f.drive || '')
+    setTimeout(() => { fetchListings(0); fetchCount() }, 50)
+  }
+
+  function doSearch() { saveSearch(); fetchListings(0); fetchCount() }
 
   function reset() {
     setMake(''); setModel(''); setBodyType(''); setDrive(''); setFuel('')
@@ -210,6 +237,19 @@ export default function Home() {
       <hr className="border-gray-100" />
       <button onClick={doSearch} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded text-sm transition">OTSI ({filterCount.toLocaleString()})</button>
       <button onClick={reset} className="w-full border border-gray-200 text-gray-500 py-1.5 rounded text-sm hover:bg-gray-50 transition">Tühjenda</button>
+      {recentSearches.length > 0 && (
+        <div>
+          <hr className="border-gray-100" />
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Viimased otsingud</p>
+          <div className="space-y-1">
+            {recentSearches.map((entry, i) => (
+              <button key={i} onClick={() => applySearch(entry)} className="w-full text-left text-xs px-2 py-1.5 rounded bg-gray-50 hover:bg-blue-50 hover:text-blue-600 text-gray-600 border border-gray-100 truncate transition">
+                {entry.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 
@@ -258,10 +298,10 @@ export default function Home() {
                         <p className="text-xs text-gray-400 truncate mt-0.5 hidden sm:block">{car.description}</p>
                       </div>
                       <div className="flex-shrink-0 text-right flex flex-col items-end gap-1">
-  <p className="text-lg sm:text-xl font-bold text-blue-600">{car.price_eur?.toLocaleString()} €</p>
-  <PriceTag car={car} openPopup={openPopup} setOpenPopup={setOpenPopup} />
-  <HistoryCheck />
-</div>
+                        <p className="text-lg sm:text-xl font-bold text-blue-600">{car.price_eur?.toLocaleString()} €</p>
+                        <PriceTag car={car} openPopup={openPopup} setOpenPopup={setOpenPopup} />
+                        <HistoryCheck />
+                      </div>
                     </div>
                     <div className="flex flex-wrap items-center gap-x-2 sm:gap-x-3 gap-y-1 mt-2 text-xs sm:text-sm text-gray-500">
                       {car.year && <span>{car.year}</span>}
@@ -273,7 +313,6 @@ export default function Home() {
                     </div>
                     <div className="mt-2 flex items-center gap-2 flex-wrap">
                       <span className={'text-xs px-2 py-0.5 rounded font-medium ' + (car.source === 'auto24' ? 'bg-blue-100 text-blue-700' : car.source === 'autoportaal' ? 'bg-green-100 text-green-700' : car.source === 'autodiiler' ? 'bg-orange-100 text-orange-700' : car.source === 'veego' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-600')}>{car.source}</span>
-                      
                     </div>
                   </div>
                 </a>
