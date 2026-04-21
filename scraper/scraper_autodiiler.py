@@ -23,7 +23,7 @@ FUEL_MAP = {
     'ethanol': 'Bensiin'
 }
 TRANSMISSION_MAP = {
-    'automatic': 'Automaat', 'manual': 'Käsitsi'
+    'automatic': 'Automaat', 'manual': 'Manuaal', 'semi-automatic': 'Poolautomaat'
 }
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)

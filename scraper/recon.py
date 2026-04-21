@@ -62,8 +62,9 @@ def parse_listing(text, href, style='', make_name=''):
         if line in ["Diisel", "Bensiin", "Hubriid", "Elekter", "Gaasbensiin"]:
             listing["fuel"] = line
             continue
-        if line in ["Automaat", "Kasitsi"]:
-            listing["transmission"] = line
+        if line in ["Automaat", "Manuaal", "Poolautomaat", "Käsitsi"]:
+            transmission_map = {"Käsitsi": "Manuaal"}
+            listing["transmission"] = transmission_map.get(line, line)
             continue
         if line in ["Sedaan", "Universaal", "Luukpara", "Maastur", "Kupee", "Kabriolett", "Minivan"]:
             listing["body"] = line

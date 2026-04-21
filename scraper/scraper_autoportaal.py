@@ -72,9 +72,11 @@ def parse_item(item, make_name):
         if 'Automatic' in transmission_raw:
             transmission = 'Automaat'
         elif 'Manual' in transmission_raw:
-            transmission = 'Käsitsi'
+            transmission = 'Manuaal'
+        elif 'Semi' in transmission_raw or 'semi' in transmission_raw:
+            transmission = 'Poolautomaat'
         else:
-            transmission = transmission_raw
+            transmission = None
         return {
             'url': url, 'title': name, 'model': model, 'make': make_name,
             'description': item.get('description', '')[:200] if item.get('description') else None,
@@ -100,6 +102,9 @@ def scrape_make(page, make_name, make_id, make_slug):
         if not listings:
             break
         supabase.table('listings').upsert(listings, on_conflict='url').execute()
+        history = [{'url': l['url'], 'price_eur': l['price_eur']} for l in listings if l.get('price_eur')]
+        if history:
+            supabase.table('price_history').insert(history).execute()
         total += len(listings)
         print(f"    Saved {len(listings)} listings")
         next_btn = page.query_selector('a[href*="page="]')
