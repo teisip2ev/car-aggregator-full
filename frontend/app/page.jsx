@@ -179,6 +179,7 @@ export default function Home() {
   const [page, setPage] = useState(0)
   const [total, setTotal] = useState(0)
   const [filterCount, setFilterCount] = useState(0)
+  const [vehicleType, setVehicleType] = useState('')
   const [recentSearches, setRecentSearches] = useState([])
 
   useEffect(() => {
@@ -215,6 +216,7 @@ export default function Home() {
     if (maxPrice) q = q.lte('price_eur', parseInt(maxPrice))
     if (minMileage) q = q.gte('mileage_km', parseInt(minMileage))
     if (maxMileage) q = q.lte('mileage_km', parseInt(maxMileage))
+    if (vehicleType) q = q.eq('vehicle_type', vehicleType)
     if (search) q = q.ilike('title', `%${search}%`)
     return q
   }
@@ -268,7 +270,7 @@ export default function Home() {
 
   function reset() {
     setMake(''); setModel(''); setBodyType(''); setDrive(''); setFuel('')
-    setTransmission(''); setMinYear(''); setMaxYear(''); setMinPrice('')
+    setVehicleType(''); setTransmission(''); setMinYear(''); setMaxYear(''); setMinPrice('')
     setMaxPrice(''); setMinMileage(''); setMaxMileage(''); setSearch('')
     setSortBy('created_at'); setSortDir('desc')
     setShowFilters(false)
@@ -282,6 +284,11 @@ export default function Home() {
 
   const sidebar = (
     <div className="bg-white border border-gray-200 rounded-lg p-3 space-y-2.5">
+      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Sõiduki tüüp</p>
+      <select value={vehicleType} onChange={e => setVehicleType(e.target.value)} className={sel}>
+        <option value="">Kõik tüübid</option><option value="Sõiduauto">Sõiduauto</option><option value="Maastur">Maastur / SUV</option><option value="Minivan">Minivan</option>
+      </select>
+      <hr className="border-gray-100" />
       <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Mark ja mudel</p>
       <select value={make} onChange={e => setMake(e.target.value)} className={sel}><option value="">Kõik margid</option>{MAKES.map(m => <option key={m} value={m}>{m}</option>)}</select>
       <select value={model} onChange={e => setModel(e.target.value)} disabled={!make} className={sel + ' disabled:opacity-40'}><option value="">Kõik mudelid</option>{models.map(m => <option key={m} value={m}>{m}</option>)}</select>
@@ -289,8 +296,7 @@ export default function Home() {
       <hr className="border-gray-100" />
       <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Keretüüp</p>
       <select value={bodyType} onChange={e => setBodyType(e.target.value)} className={sel}>
-        <option value="">Kõik</option><option value="Sedaan">Sedaan</option><option value="Universaal">Universaal</option><option value="Luukpära">Luukpära</option><option value="Maastur">Maastur</option><option value="Kupee">Kupee</option><option value="Kabriolett">Kabriolett</option><option value="Minivan">Minivan</option>
-      </select>
+<option value="">Kõik</option><option value="Sedaan">Sedaan</option><option value="Universaal">Universaal</option><option value="Luukpära">Luukpära</option><option value="Maastur">Maastur</option><option value="Kupee">Kupee</option><option value="Kabriolett">Kabriolett</option><option value="Minivan">Minivan</option><option value="Kaubik">Kaubik</option><option value="Pikap">Pikap</option>      </select>
       <hr className="border-gray-100" />
       <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Aasta</p>
       <div className="flex gap-1"><input type="number" placeholder="Alates" value={minYear} onChange={e => setMinYear(e.target.value)} className={inp} /><input type="number" placeholder="Kuni" value={maxYear} onChange={e => setMaxYear(e.target.value)} className={inp} /></div>
