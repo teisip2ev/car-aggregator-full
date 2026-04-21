@@ -284,19 +284,21 @@ export default function Home() {
 
   const sidebar = (
     <div className="bg-white border border-gray-200 rounded-lg p-3 space-y-2.5">
+    
       <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Sõiduki tüüp</p>
       <select value={vehicleType} onChange={e => setVehicleType(e.target.value)} className={sel}>
         <option value="">Kõik tüübid</option><option value="Sõiduauto">Sõiduauto</option><option value="Maastur">Maastur / SUV</option><option value="Minivan">Minivan</option>
+      </select>
+      <hr className="border-gray-100" />
+      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Keretüüp</p>
+      <select value={bodyType} onChange={e => setBodyType(e.target.value)} className={sel}>
+        <option value="">Kõik</option><option value="Sedaan">Sedaan</option><option value="Universaal">Universaal</option><option value="Luukpära">Luukpära</option><option value="Maastur">Maastur</option><option value="Kupee">Kupee</option><option value="Kabriolett">Kabriolett</option><option value="Minivan">Minivan</option><option value="Kaubik">Kaubik</option><option value="Pikap">Pikap</option>
       </select>
       <hr className="border-gray-100" />
       <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Mark ja mudel</p>
       <select value={make} onChange={e => setMake(e.target.value)} className={sel}><option value="">Kõik margid</option>{MAKES.map(m => <option key={m} value={m}>{m}</option>)}</select>
       <select value={model} onChange={e => setModel(e.target.value)} disabled={!make} className={sel + ' disabled:opacity-40'}><option value="">Kõik mudelid</option>{models.map(m => <option key={m} value={m}>{m}</option>)}</select>
       <input type="text" placeholder="Täpsustus (nt. M-pakett, AMG...)" value={search} onChange={e => setSearch(e.target.value)} onKeyDown={e => e.key === 'Enter' && doSearch()} className={inp} />
-      <hr className="border-gray-100" />
-      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Keretüüp</p>
-      <select value={bodyType} onChange={e => setBodyType(e.target.value)} className={sel}>
-<option value="">Kõik</option><option value="Sedaan">Sedaan</option><option value="Universaal">Universaal</option><option value="Luukpära">Luukpära</option><option value="Maastur">Maastur</option><option value="Kupee">Kupee</option><option value="Kabriolett">Kabriolett</option><option value="Minivan">Minivan</option><option value="Kaubik">Kaubik</option><option value="Pikap">Pikap</option>      </select>
       <hr className="border-gray-100" />
       <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Aasta</p>
       <div className="flex gap-1"><input type="number" placeholder="Alates" value={minYear} onChange={e => setMinYear(e.target.value)} className={inp} /><input type="number" placeholder="Kuni" value={maxYear} onChange={e => setMaxYear(e.target.value)} className={inp} /></div>
