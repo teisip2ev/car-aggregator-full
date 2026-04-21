@@ -85,6 +85,9 @@ def scrape_make(make_name, brand_id):
         if listings:
             try:
                 supabase.table('listings').upsert(listings, on_conflict='url').execute()
+                history = [{'url': l['url'], 'price_eur': l['price_eur']} for l in listings if l.get('price_eur')]
+                if history:
+                    supabase.table('price_history').insert(history).execute()
                 total += len(listings)
                 print(f"    Saved {len(listings)} listings")
             except Exception as e:

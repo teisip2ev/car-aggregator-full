@@ -90,6 +90,9 @@ for make_name, make_id in MAKES.items():
         if listings:
             try:
                 supabase.table('listings').upsert(listings, on_conflict='url').execute()
+                history = [{'url': l['url'], 'price_eur': l['price_eur']} for l in listings if l.get('price_eur')]
+                if history:
+                    supabase.table('price_history').insert(history).execute()
                 make_total += len(listings)
                 print(f"  Page {page}: saved {len(listings)}")
             except Exception as e:

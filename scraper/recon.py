@@ -106,6 +106,9 @@ def scrape_make(page, make_name, make_id):
         if not new_listings:
             break
         supabase.table("listings").upsert(new_listings, on_conflict="url").execute()
+        history = [{'url': l['url'], 'price_eur': l['price_eur']} for l in new_listings if l.get('price_eur')]
+        if history:
+            supabase.table('price_history').insert(history).execute()
         all_listings.extend(new_listings)
         print(f"    Saved {len(new_listings)} listings")
         next_button = page.query_selector("a:has-text('järgmine')")
