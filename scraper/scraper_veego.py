@@ -57,8 +57,15 @@ def parse_listing(item, make_name):
         fuel_raw = item.get('fuel', '')
         fuel = FUEL_MAP.get(fuel_raw, fuel_raw)
         gearbox = item.get('gearbox', '')
-transmission = 'Automaat' if gearbox == 'A' else 'Manuaal' if gearbox == 'M' else 'Poolautomaat' if gearbox == 'S' else None        images = item.get('images', [])
-        image_url = images[0].get('thumb_data_sm') if images else None
+if gearbox == 'A':
+            transmission = 'Automaat'
+        elif gearbox == 'M':
+            transmission = 'Manuaal'
+        elif gearbox == 'S':
+            transmission = 'Poolautomaat'
+        else:
+            transmission = None
+        images = item.get('images', [])        image_url = images[0].get('thumb_data_sm') if images else None
         annual_tax = item.get('annual_tax')
         registration_tax = item.get('registration_tax')
         return {
