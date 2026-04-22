@@ -101,12 +101,18 @@ def scrape_make(page, make_name, make_id, make_slug):
         listings = parse_json_listings(html, make_name)
         if not listings:
             break
-        supabase.table('listings').upsert(listings, on_conflict='url').execute()
-        history = [{'url': l['url'], 'price_eur': l['price_eur']} for l in listings if l.get('price_eur')]
-        if history:
-            supabase.table('price_history').insert(history).execute()
-        total += len(listings)
-        print(f"    Saved {len(listings)} listings")
+        for attempt in range(3):
+            try:
+                supabase.table('listings').upsert(listings, on_conflict='url').execute()
+                history = [{'url': l['url'], 'price_eur': l['price_eur']} for l in listings if l.get('price_eur')]
+                if history:
+                    supabase.table('price_history').insert(history).execute()
+                total += len(listings)
+                print(f"    Saved {len(listings)} listings")
+                break
+            except Exception as e:
+                print(f"    Save error (attempt {attempt+1}): {e}")
+                time.sleep(10)
         next_btn = page.query_selector('a[href*="page="]')
         if not next_btn:
             break

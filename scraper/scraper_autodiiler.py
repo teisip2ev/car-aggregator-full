@@ -83,16 +83,18 @@ def scrape_make(make_name, brand_id):
             break
         listings = [l for l in (parse_listing(item, make_name) for item in data.get('data', [])) if l]
         if listings:
-            try:
-                supabase.table('listings').upsert(listings, on_conflict='url').execute()
-                history = [{'url': l['url'], 'price_eur': l['price_eur']} for l in listings if l.get('price_eur')]
-                if history:
-                    supabase.table('price_history').insert(history).execute()
-                total += len(listings)
-                print(f"    Saved {len(listings)} listings")
-            except Exception as e:
-                print(f"  Error saving: {e}")
-                time.sleep(5)
+            for attempt in range(3):
+                try:
+                    supabase.table('listings').upsert(listings, on_conflict='url').execute()
+                    history = [{'url': l['url'], 'price_eur': l['price_eur']} for l in listings if l.get('price_eur')]
+                    if history:
+                        supabase.table('price_history').insert(history).execute()
+                    total += len(listings)
+                    print(f"    Saved {len(listings)} listings")
+                    break
+                except Exception as e:
+                    print(f"  Error saving (attempt {attempt+1}): {e}")
+                    time.sleep(10)
         next_url = data.get('meta', {}).get('pagination', {}).get('links', {}).get('next')
         page_num += 1
         time.sleep(1)

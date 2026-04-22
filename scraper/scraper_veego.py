@@ -99,16 +99,18 @@ for make_name, make_id in MAKES.items():
             break
         listings = [l for l in (parse_listing(r, make_name) for r in results) if l]
         if listings:
-            try:
-                supabase.table('listings').upsert(listings, on_conflict='url').execute()
-                history = [{'url': l['url'], 'price_eur': l['price_eur']} for l in listings if l.get('price_eur')]
-                if history:
-                    supabase.table('price_history').insert(history).execute()
-                make_total += len(listings)
-                print(f"  Page {page}: saved {len(listings)}")
-            except Exception as e:
-                print(f"  Save error: {e}")
-                time.sleep(5)
+            for attempt in range(3):
+                try:
+                    supabase.table('listings').upsert(listings, on_conflict='url').execute()
+                    history = [{'url': l['url'], 'price_eur': l['price_eur']} for l in listings if l.get('price_eur')]
+                    if history:
+                        supabase.table('price_history').insert(history).execute()
+                    make_total += len(listings)
+                    print(f"  Page {page}: saved {len(listings)}")
+                    break
+                except Exception as e:
+                    print(f"  Save error (attempt {attempt+1}): {e}")
+                    time.sleep(10)
         total_pages = data.get('pages', 1)
         if page >= total_pages:
             break

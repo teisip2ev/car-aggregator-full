@@ -106,10 +106,16 @@ def scrape_make(page, make_name, make_id):
                     new_listings.append(parsed)
         if not new_listings:
             break
-        supabase.table("listings").upsert(new_listings, on_conflict="url").execute()
-        history = [{'url': l['url'], 'price_eur': l['price_eur']} for l in new_listings if l.get('price_eur')]
-        if history:
-            supabase.table('price_history').insert(history).execute()
+        for attempt in range(3):
+            try:
+                supabase.table("listings").upsert(new_listings, on_conflict="url").execute()
+                history = [{'url': l['url'], 'price_eur': l['price_eur']} for l in new_listings if l.get('price_eur')]
+                if history:
+                    supabase.table('price_history').insert(history).execute()
+                break
+            except Exception as e:
+                print(f"  Save error (attempt {attempt+1}): {e}")
+                time.sleep(10)
         all_listings.extend(new_listings)
         print(f"    Saved {len(new_listings)} listings")
         next_button = page.query_selector("a:has-text('järgmine')")
