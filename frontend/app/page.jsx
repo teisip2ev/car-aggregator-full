@@ -219,8 +219,9 @@ export default function Home() {
     if (maxPrice) q = q.lte('price_eur', parseInt(maxPrice))
     if (minMileage) q = q.gte('mileage_km', parseInt(minMileage))
     if (maxMileage) q = q.lte('mileage_km', parseInt(maxMileage))
-    if (country === 'EE') q = q.eq('country', 'EE')
-    if (country === 'foreign') q = q.eq('country', 'LV')
+if (country === 'EE') q = q.eq('country', 'EE')
+if (country === 'LV') q = q.eq('country', 'LV')
+if (country === 'LT') q = q.eq('country', 'LT')    
     if (vehicleType) q = q.eq('vehicle_type', vehicleType)
     if (search) q = q.ilike('title', `%${search}%`)
     return q
@@ -359,10 +360,12 @@ export default function Home() {
             <button onClick={() => setCountry('EE')} className={"text-xs px-2 py-1 rounded-md font-medium transition " + (country === 'EE' ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700')}>
               🇪🇪 Eesti
             </button>
-            <button onClick={() => setCountry('foreign')} className={"text-xs px-2 py-1 rounded-md font-medium transition " + (country === 'foreign' ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700')}>
-              🇱🇻 Läti
-            </button>
-            <button onClick={() => setCountry('all')} className={"text-xs px-2 py-1 rounded-md font-medium transition " + (country === 'all' ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700')}>
+<button onClick={() => setCountry('LV')} className={"text-xs px-2 py-1 rounded-md font-medium transition " + (country === 'LV' ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700')}>
+  🇱🇻 Läti
+</button>
+<button onClick={() => setCountry('LT')} className={"text-xs px-2 py-1 rounded-md font-medium transition " + (country === 'LT' ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700')}>
+  🇱🇹 Leedu
+</button>            <button onClick={() => setCountry('all')} className={"text-xs px-2 py-1 rounded-md font-medium transition " + (country === 'all' ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700')}>
               Kõik
             </button>
           </div>
