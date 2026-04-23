@@ -84,7 +84,8 @@ def parse_item(item, make_name):
             'mileage_km': int(mileage) if mileage else None,
             'fuel': fuel, 'transmission': transmission,
             'body': item.get('bodyType'), 'drive': None,
-            'image_url': image_url, 'source': 'autoportaal'
+            'image_url': image_url, 'source': 'autoportaal',
+            'country': 'EE'
         }
     except:
         return None

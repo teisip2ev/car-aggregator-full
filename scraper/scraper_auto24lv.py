@@ -37,8 +37,8 @@ def parse_listing(text, href, style='', make_name=''):
     listing = {
         "url": href, "image_url": image_url, "title": None, "description": None,
         "price_eur": None, "year": None, "mileage_km": None, "fuel": None,
-        "transmission": None, "body": None, "drive": None, "source": "auto24",
-        "make": make_name, "model": None, "country": "EE"
+        "transmission": None, "body": None, "drive": None, "source": "auto24lv",
+        "make": make_name, "model": None, "country": "LV"
     }
     for line in lines:
         price_match = re.search(r"([\d\s\xa0]+)\s*€", line)
@@ -59,12 +59,13 @@ def parse_listing(text, href, style='', make_name=''):
                 except:
                     pass
                 continue
-        if line in ["Diisel", "Bensiin", "Hubriid", "Elekter", "Gaasbensiin"]:
-            listing["fuel"] = line
+        FUEL_MAP_LV = {"Dīzelis": "Diisel", "Benzīns": "Bensiin", "Elektro": "Elekter", "Hibrīds": "Hubriid", "Gāze": "Gaasbensiin"}
+        if line in ["Diisel", "Bensiin", "Hubriid", "Elekter", "Gaasbensiin"] or line in FUEL_MAP_LV:
+            listing["fuel"] = FUEL_MAP_LV.get(line, line)
             continue
-        if line in ["Automaat", "Manuaal", "Poolautomaat", "Käsitsi"]:
-            transmission_map = {"Käsitsi": "Manuaal"}
-            listing["transmission"] = transmission_map.get(line, line)
+        TRANS_MAP_LV = {"Automātiskā": "Automaat", "Manuālā": "Manuaal", "Pusautomātiskā": "Poolautomaat", "Käsitsi": "Manuaal"}
+        if line in ["Automaat", "Manuaal", "Poolautomaat", "Käsitsi"] or line in TRANS_MAP_LV:
+            listing["transmission"] = TRANS_MAP_LV.get(line, line)
             continue
         if line in ["Sedaan", "Universaal", "Luukpara", "Maastur", "Kupee", "Kabriolett", "Minivan"]:
             listing["body"] = line
@@ -81,7 +82,7 @@ def parse_listing(text, href, style='', make_name=''):
     return listing
 
 def scrape_make(page, make_name, make_id):
-    base_url = f"https://www.auto24.ee/kasutatud/nimekiri.php?bn=2&a=100&b={make_id}&ae=8&af=50&otsi=otsi"
+    base_url = f"https://www.auto24.lv/kasutatud/nimekiri.php?bn=2&a=100&b={make_id}&ae=8&af=50&ab[]=-2&otsi=search"
     all_listings = []
     offset = 0
     page_num = 1
@@ -118,7 +119,7 @@ def scrape_make(page, make_name, make_id):
                 time.sleep(10)
         all_listings.extend(new_listings)
         print(f"    Saved {len(new_listings)} listings")
-        next_button = page.query_selector("a:has-text('järgmine')")
+        next_button = page.query_selector("a:has-text('nākošā')")
         if not next_button:
             break
         offset += 50

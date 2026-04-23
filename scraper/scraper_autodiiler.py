@@ -65,7 +65,8 @@ def parse_listing(item, make_name):
             'mileage_km': int(mileage) if mileage else None,
             'fuel': fuel, 'transmission': transmission,
             'body': item.get('vehicleBodyType', {}).get('name'),
-            'drive': drive, 'image_url': image_url, 'source': 'autodiiler'
+            'drive': drive, 'image_url': image_url, 'source': 'autodiiler',
+            'country': 'EE'
         }
     except:
         return None

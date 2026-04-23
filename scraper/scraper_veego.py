@@ -77,6 +77,7 @@ def parse_listing(item, make_name):
             'fuel': fuel, 'transmission': transmission,
             'body': None, 'drive': None,
             'image_url': image_url, 'source': 'veego',
+            'country': 'EE',
             'annual_tax': int(annual_tax) if annual_tax else None,
             'registration_tax': int(registration_tax) if registration_tax else None,
         }
