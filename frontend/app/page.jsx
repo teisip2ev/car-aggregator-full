@@ -455,6 +455,7 @@ export default function Home() {
   const [sortDir, setSortDir] = useState('desc')
   const [page, setPage] = useState(0)
   const [total, setTotal] = useState(0)
+  const [priceDropOnly, setPriceDropOnly] = useState(false)
   const [recentSearches, setRecentSearches] = useState([])
 
   useEffect(() => {
@@ -465,6 +466,7 @@ export default function Home() {
   }, [])
 
   useEffect(() => { fetchListings(0) }, [country])
+  useEffect(() => { fetchListings(0) }, [priceDropOnly])
 
   useEffect(() => {
     if (make) loadModels(make)
@@ -497,6 +499,7 @@ export default function Home() {
     if (maxPrice) q = q.lte('price_eur', parseInt(maxPrice))
     if (minMileage) q = q.gte('mileage_km', parseInt(minMileage))
     if (maxMileage) q = q.lte('mileage_km', parseInt(maxMileage))
+    if (priceDropOnly) q = q.gt('price_drop', 0)
     if (search) q = q.ilike('title', `%${search}%`)
     return q
   }
@@ -748,6 +751,9 @@ export default function Home() {
           <div className="flex items-center justify-between mb-4 bg-white rounded-2xl border border-slate-200 shadow-sm px-4 py-2.5">
             <p className="text-sm font-semibold text-slate-600">{total.toLocaleString()} <span className="font-normal text-slate-400">kuulutust</span></p>
             <div className="flex items-center gap-2">
+              <button onClick={() => { setPriceDropOnly(!priceDropOnly); setTimeout(() => { fetchListings(0) }, 50) }} className={'text-xs px-3 py-1.5 rounded-lg font-semibold border transition ' + (priceDropOnly ? 'bg-emerald-500 text-white border-emerald-500' : 'border-slate-200 text-slate-500 hover:border-emerald-400 hover:text-emerald-600')}>
+                🔥 Hind langenud
+              </button>
               <span className="text-xs text-slate-400 hidden sm:block">Järjesta:</span>
               <select value={sortBy} onChange={e => { setSortBy(e.target.value); fetchListings(0, e.target.value, sortDir) }} className="text-sm border border-slate-200 rounded-lg px-2 py-1 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-cyan-500">
                 <option value="created_at">Uusimad</option>
@@ -798,10 +804,15 @@ export default function Home() {
                       {car.body && <><span className="text-slate-200 pr-3 hidden sm:inline">|</span><span className="pr-3 hidden sm:inline">{car.body}</span></>}
                       {car.drive && <><span className="text-slate-200 pr-3 hidden sm:inline">|</span><span className="hidden sm:inline">{car.drive}</span></>}
                     </div>
-                    <div className="mt-2">
+                    <div className="mt-2 flex items-center gap-2 flex-wrap">
                       <span className={"text-xs px-2 py-0.5 rounded-full font-semibold " + (SOURCE_COLORS[car.source] || 'bg-slate-100 text-slate-600')}>
                         {car.source}
                       </span>
+                      {car.price_drop > 0 && (
+                        <span className="text-xs px-2 py-0.5 rounded-full font-semibold bg-emerald-100 text-emerald-700">
+                          ↓ {car.price_drop?.toLocaleString()}€ odavamaks
+                        </span>
+                      )}
                     </div>
                   </div>
                 </a>
