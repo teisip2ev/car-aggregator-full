@@ -448,10 +448,10 @@ export default function Home() {
                         <p className="text-xs text-slate-400 truncate mt-0.5 hidden sm:block">{car.description}</p>
                       </div>
                       <div className="flex-shrink-0 text-right flex flex-col items-end gap-1">
-<p className="text-lg sm:text-2xl font-black text-cyan-600">{car.price_eur?.toLocaleString()} €</p>                        {car.country === 'EE' && <PriceTag car={car} openPopup={openPopup} setOpenPopup={setOpenPopup} />}
-                        {car.country === 'EE' && <HistoryCheck />}
-                        {car.country === 'EE' && <FuelCost car={car} />}
-                      </div>
+<p className="text-lg sm:text-2xl font-black text-cyan-600">{car.price_eur?.toLocaleString()} €</p>                        
+{(car.country === 'EE' || car.source === 'auto24lv') && <PriceTag car={car} openPopup={openPopup} setOpenPopup={setOpenPopup} />}
+{car.country === 'EE' && <HistoryCheck />}
+{(car.country === 'EE' || car.source === 'auto24lv') && <FuelCost car={car} />}                      </div>
                     </div>
                     <div className="flex flex-wrap items-center gap-y-0.5 mt-2 text-sm text-slate-500">
                       {car.year && <span className="font-bold text-slate-800 pr-3">{car.year}</span>}
