@@ -82,7 +82,7 @@ def parse_listing(text, href, style='', make_name=''):
     return listing
 
 def scrape_make(page, make_name, make_id):
-    base_url = f"https://www.auto24.lv/kasutatud/nimekiri.php?bn=2&a=100&b={make_id}&ae=8&af=50&ab[]=-2&otsi=search"
+    base_url = f"https://www.auto24.lv/kasutatud/nimekiri.php?bn=2&a=100&b={make_id}&ae=8&af=50&ab=0&ab[]=-2&otsi=search"
     all_listings = []
     offset = 0
     page_num = 1
