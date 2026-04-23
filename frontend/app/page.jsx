@@ -180,6 +180,7 @@ export default function Home() {
   const [total, setTotal] = useState(0)
   const [filterCount, setFilterCount] = useState(0)
   const [vehicleType, setVehicleType] = useState('')
+  const [country, setCountry] = useState('EE')
   const [recentSearches, setRecentSearches] = useState([])
 
   useEffect(() => {
@@ -188,6 +189,8 @@ export default function Home() {
     const saved = localStorage.getItem('recentSearches')
     if (saved) setRecentSearches(JSON.parse(saved))
   }, [])
+
+  useEffect(() => { fetchListings(0); fetchCount() }, [country])
 
   useEffect(() => {
     if (make) loadModels(make)
@@ -216,6 +219,8 @@ export default function Home() {
     if (maxPrice) q = q.lte('price_eur', parseInt(maxPrice))
     if (minMileage) q = q.gte('mileage_km', parseInt(minMileage))
     if (maxMileage) q = q.lte('mileage_km', parseInt(maxMileage))
+    if (country === 'EE') q = q.eq('country', 'EE')
+    if (country === 'foreign') q = q.eq('country', 'LV')
     if (vehicleType) q = q.eq('vehicle_type', vehicleType)
     if (search) q = q.ilike('title', `%${search}%`)
     return q
@@ -270,7 +275,7 @@ export default function Home() {
 
   function reset() {
     setMake(''); setModel(''); setBodyType(''); setDrive(''); setFuel('')
-    setVehicleType(''); setTransmission(''); setMinYear(''); setMaxYear(''); setMinPrice('')
+    setCountry('EE'); setVehicleType(''); setTransmission(''); setMinYear(''); setMaxYear(''); setMinPrice('')
     setMaxPrice(''); setMinMileage(''); setMaxMileage(''); setSearch('')
     setSortBy('created_at'); setSortDir('desc')
     setShowFilters(false)
@@ -350,7 +355,18 @@ export default function Home() {
             <span className="text-xl font-bold text-blue-600">Autootsing</span>
             <span className="text-gray-400 text-sm hidden sm:block">Eesti autokuulutused ühes kohas</span>
           </button>
-          <button onClick={() => setShowFilters(!showFilters)} className="ml-auto md:hidden border border-gray-200 rounded px-3 py-1.5 text-sm text-gray-600">
+          <div className="ml-auto flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+            <button onClick={() => setCountry('EE')} className={"text-xs px-2 py-1 rounded-md font-medium transition " + (country === 'EE' ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700')}>
+              🇪🇪 Eesti
+            </button>
+            <button onClick={() => setCountry('foreign')} className={"text-xs px-2 py-1 rounded-md font-medium transition " + (country === 'foreign' ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700')}>
+              🇱🇻 Läti
+            </button>
+            <button onClick={() => setCountry('all')} className={"text-xs px-2 py-1 rounded-md font-medium transition " + (country === 'all' ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700')}>
+              Kõik
+            </button>
+          </div>
+          <button onClick={() => setShowFilters(!showFilters)} className="md:hidden border border-gray-200 rounded px-3 py-1.5 text-sm text-gray-600">
             {showFilters ? 'Peida filtrid' : 'Filtrid'}
           </button>
         </div>
@@ -387,9 +403,8 @@ export default function Home() {
                       </div>
                       <div className="flex-shrink-0 text-right flex flex-col items-end gap-1">
                         <p className="text-lg sm:text-xl font-bold text-blue-600">{car.price_eur?.toLocaleString()} €</p>
-                        <PriceTag car={car} openPopup={openPopup} setOpenPopup={setOpenPopup} />
-                        <HistoryCheck />
-                        <FuelCost car={car} />
+{car.country === 'EE' && <PriceTag car={car} openPopup={openPopup} setOpenPopup={setOpenPopup} />}
+{car.country === 'EE' && <HistoryCheck />}                        <FuelCost car={car} />
                       </div>
                     </div>
                     <div className="flex flex-wrap items-center gap-y-0.5 mt-2 text-sm text-gray-500">
