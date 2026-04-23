@@ -130,7 +130,270 @@ function FuelCost({ car }) {
   )
 }
 
+
+function Onboarding({ onComplete }) {
+  const [step, setStep] = useState(-1)
+  const [answers, setAnswers] = useState({})
+  const [budget, setBudget] = useState(15000)
+  const [showSummary, setShowSummary] = useState(false)
+  const [recommendation, setRecommendation] = useState(null)
+
+  const questions = [
+    {
+      id: 'mileage',
+      question: 'Kui palju plaanid aastas sõita?',
+      reason: 'Läbisõit mõjutab otseselt kütusekulu — suurema läbisõiduga tasub eelistada diislit või hübriidi.',
+      options: [
+        { label: 'Alla 10 000 km', value: 'low', emoji: '🚶' },
+        { label: '10 000 – 25 000 km', value: 'medium', emoji: '🚗' },
+        { label: 'Üle 25 000 km', value: 'high', emoji: '🛣️' },
+      ]
+    },
+    {
+      id: 'passengers',
+      question: 'Kui palju inimesi peab autosse mahtuma?',
+      reason: 'See aitab soovitada õiget keretüüpi — kupee, sedaan, maastur või minivan.',
+      options: [
+        { label: '1–2 inimest', value: 'small', emoji: '👫' },
+        { label: 'Kuni 5 inimest', value: 'medium', emoji: '👪' },
+        { label: '6 või rohkem', value: 'large', emoji: '👬' },
+      ]
+    },
+    {
+      id: 'budget',
+      type: 'slider',
+      question: 'Milline on sinu eelarve?',
+      reason: 'Eelarve aitab filtreerida välja autod, mis on sinu jaoks realistlikud.',
+    },
+    {
+      id: 'age',
+      question: 'Kui vana võiks auto olla?',
+      reason: 'Uuemad autod on tehnoloogiliselt arenenumad, vanemad aga taskukohasemad. See aitab seada aastavalikut.',
+      options: [
+        { label: 'Uus või peaaegu uus (kuni 3a)', value: '3', emoji: '✨' },
+        { label: 'Mitte vanem kui 7 aastat', value: '7', emoji: '👌' },
+        { label: 'Kuni 15 aastat', value: '15', emoji: '😁' },
+        { label: 'Pole vahet', value: '', emoji: '🤷' },
+      ]
+    },
+    {
+      id: 'priority',
+      question: 'Mis on sulle olulisem?',
+      reason: 'See mõjutab mootori ja kütuse soovitust.',
+      options: [
+        { label: 'Jõudlus', value: 'performance', emoji: '⚡' },
+        { label: 'Ökonoomsus', value: 'economy', emoji: '🌿' },
+        { label: 'Tasakaal', value: 'balance', emoji: '⚖️' },
+      ]
+    },
+    {
+      id: 'transmission',
+      question: 'Kas eelistad käigukasti?',
+      reason: 'Automaatkäigukast on mugavam linnasõiduks, manuaal annab rohkem kontrolli ja on tihti odavam hooldada.',
+      options: [
+        { label: 'Automaatkäigukast', value: 'Automaat', emoji: '🛵' },
+        { label: 'Manuaalkäigukast', value: 'Manuaal', emoji: '🏎️' },
+        { label: 'Pole vahet', value: '', emoji: '🤷' },
+      ]
+    },
+    {
+      id: 'fuel',
+      question: 'Millist kütust eelistad?',
+      reason: 'Kütuse valik mõjutab igapäevast kasutust ja hoolduskulusid. Kui pole kindel, soovitame vastuste põhjal.',
+      options: [
+        { label: 'Bensiin', value: 'Bensiin', emoji: '⛽' },
+        { label: 'Diisel', value: 'Diisel', emoji: '🛢️' },
+        { label: 'Elekter', value: 'Elekter', emoji: '⚡' },
+        { label: 'Hübriid', value: 'Hübriid', emoji: '🔋' },
+        { label: 'Soovita mulle', value: 'recommend', emoji: '💡' },
+      ]
+    },
+  ]
+
+  const currentYear = new Date().getFullYear()
+
+  function getRecommendation(ans) {
+    let fuel = ''
+    let body = ''
+    let transmission = ''
+    let minYear = ''
+
+    if (ans.fuel && ans.fuel !== 'recommend') {
+      fuel = ans.fuel
+    } else {
+      if (ans.mileage === 'high' || (ans.mileage === 'medium' && ans.priority === 'economy')) {
+        fuel = 'Diisel'
+      } else if (ans.priority === 'performance') {
+        fuel = 'Bensiin'
+      } else if (ans.priority === 'economy' && ans.mileage === 'low') {
+        fuel = 'Hübriid'
+      }
+    }
+
+    if (ans.passengers === 'large') body = 'Minivan'
+    else if (ans.passengers === 'medium') body = 'Universaal'
+    else if (ans.priority === 'performance') body = 'Sedaan'
+
+    if (ans.transmission) transmission = ans.transmission
+
+    if (ans.age) minYear = String(currentYear - parseInt(ans.age))
+
+    let minPower = ''
+    if (ans.priority === 'performance') minPower = '130'
+
+    return { fuel, body, maxPrice: String(budget), transmission, minYear, minPower }
+  }
+
+  function buildSummary(ans, rec) {
+    const lines = []
+    const mileageLabel = { low: 'alla 10 000 km/a', medium: '10 000–25 000 km/a', high: 'üle 25 000 km/a' }
+    const passLabel = { small: '1–2 inimest', medium: 'kuni 5 inimest', large: '6+' }
+    const priorityLabel = { performance: 'jõudlus', economy: 'ökonoomsus', balance: 'tasakaal' }
+
+    lines.push(`🛣️ Läbisõit: ${mileageLabel[ans.mileage] || ''}`)
+    lines.push(`👪 Reisijaid: ${passLabel[ans.passengers] || ''}`)
+    lines.push(`💰 Eelarve: kuni ${budget.toLocaleString()} €`)
+    if (ans.age) lines.push(`📅 Vanus: kuni ${ans.age} aastat vana`)
+    lines.push(`⚖️ Prioriteet: ${priorityLabel[ans.priority] || ''}`)
+    if (ans.transmission) lines.push(`🛵 Käigukast: ${ans.transmission}`)
+    if (rec.fuel) lines.push(`⛽ Kütus: ${rec.fuel}`)
+    if (rec.body) lines.push(`🚗 Keretüüp: ${rec.body}`)
+
+    return lines
+  }
+
+  function handleSelect(value) {
+    const q = questions[step]
+    const newAnswers = { ...answers, [q.id]: value }
+    setAnswers(newAnswers)
+    if (step < questions.length - 1) {
+      setStep(step + 1)
+    } else {
+      const rec = getRecommendation(newAnswers)
+      setRecommendation(rec)
+      setShowSummary(true)
+    }
+  }
+
+  function handleSliderNext() {
+    const newAnswers = { ...answers, budget: String(budget) }
+    setAnswers(newAnswers)
+    setStep(step + 1)
+  }
+
+  const progress = (step / questions.length) * 100
+
+  if (step === -1) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4">
+        <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg p-8 text-center">
+          <div className="text-5xl mb-4">🚗</div>
+          <h2 className="text-3xl font-black text-slate-900 mb-3">Tere tulemast<span className="text-cyan-500">!</span></h2>
+          <p className="text-slate-500 leading-relaxed mb-2">
+            <strong className="text-slate-700">Autootsing</strong> koondab kõik Eesti autokuulutused ühte kohta — üle <strong className="text-slate-700">44 000</strong> kuulutuse neljalt saidilt.
+          </p>
+          <p className="text-slate-500 leading-relaxed mb-8">
+            Et aidata sul kõige sobivama auto leida, küsime sinult mõned küsimused. Vastused aitavad meil filtreerida just sulle sobivad autod.
+          </p>
+          <div className="flex flex-col gap-3">
+            <button onClick={() => setStep(0)} className="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3.5 rounded-2xl transition shadow-lg shadow-cyan-100">
+              Alustame →
+            </button>
+            <button onClick={() => onComplete(null)} className="w-full text-slate-400 hover:text-slate-600 py-2 text-sm transition">
+              Jätan vahele, otsin ise
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (showSummary && recommendation) {
+    const summaryLines = buildSummary(answers, recommendation)
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4">
+        <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg p-8">
+          <div className="text-center mb-6">
+            <div className="text-4xl mb-3">🎯</div>
+            <h2 className="text-2xl font-black text-slate-900 mb-1">Kas see kõlab õigesti?</h2>
+            <p className="text-sm text-slate-500">Sinu vastuste põhjal otsime just sellist autot:</p>
+          </div>
+          <div className="bg-slate-50 rounded-2xl p-4 mb-6 space-y-2">
+            {summaryLines.map((line, i) => (
+              <p key={i} className="text-sm text-slate-700">{line}</p>
+            ))}
+          </div>
+          <div className="flex flex-col gap-3">
+            <button onClick={() => onComplete(recommendation)} className="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3.5 rounded-2xl transition shadow-lg shadow-cyan-100">
+              Jah, näita mulle sobivaid autosid →
+            </button>
+            <button onClick={() => { setStep(0); setAnswers({}); setShowSummary(false) }} className="w-full border-2 border-slate-200 text-slate-600 font-semibold py-2.5 rounded-2xl text-sm hover:bg-slate-50 transition">
+              Muudan vastuseid
+            </button>
+            <button onClick={() => onComplete(null)} className="w-full text-slate-400 hover:text-slate-600 py-2 text-sm transition">
+              Jätan vahele
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const q = questions[step]
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden">
+        <div className="h-1.5 bg-slate-100">
+          <div className="h-1.5 bg-cyan-500 transition-all duration-500 rounded-full" style={{width: progress + '%'}} />
+        </div>
+        <div className="p-8">
+          <div className="flex justify-between items-center mb-6">
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Küsimus {step + 1}/{questions.length}</span>
+            <button onClick={() => onComplete(null)} className="text-xs text-slate-400 hover:text-slate-600 transition">Jäta vahele</button>
+          </div>
+          <h2 className="text-2xl font-black text-slate-900 mb-2">{q.question}</h2>
+          <p className="text-sm text-slate-500 mb-6 leading-relaxed">
+            <span className="text-cyan-600 font-semibold">Miks küsime? </span>
+            {q.reason}
+          </p>
+          {q.type === 'slider' ? (
+            <div>
+              <div className="text-center mb-4">
+                <span className="text-4xl font-black text-slate-900">{budget.toLocaleString()}</span>
+                <span className="text-2xl font-black text-cyan-600"> €</span>
+              </div>
+              <input type="range" min="2000" max="80000" step="1000" value={budget}
+                onChange={e => setBudget(parseInt(e.target.value))}
+                className="w-full accent-cyan-600 mb-2" />
+              <div className="flex justify-between text-xs text-slate-400 mb-6">
+                <span>2 000 €</span>
+                <span>80 000 €</span>
+              </div>
+              <button onClick={handleSliderNext} className="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3.5 rounded-2xl transition">
+                Edasi →
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {q.options.map(opt => (
+                <button key={opt.value} onClick={() => handleSelect(opt.value)}
+                  className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-slate-100 hover:border-cyan-400 hover:bg-cyan-50 transition-all duration-150 text-left group">
+                  <span className="text-2xl">{opt.emoji}</span>
+                  <span className="font-semibold text-slate-800 group-hover:text-cyan-700">{opt.label}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+
 export default function Home() {
+  const [showOnboarding, setShowOnboarding] = useState(false)
   const [listings, setListings] = useState([])
   const [models, setModels] = useState([])
   const [loading, setLoading] = useState(true)
@@ -159,6 +422,7 @@ export default function Home() {
 
   useEffect(() => {
     fetchListings(0, 'created_at', 'desc')
+    if (!localStorage.getItem('onboardingDone')) setShowOnboarding(true)
     const saved = localStorage.getItem('recentSearches')
     if (saved) setRecentSearches(JSON.parse(saved))
   }, [])
@@ -237,6 +501,36 @@ export default function Home() {
     setBodyType(f.bodyType || ''); setDrive(f.drive || '')
     setVehicleType(f.vehicleType || '')
     setTimeout(() => fetchListings(0), 50)
+  }
+
+  function handleOnboardingComplete(rec) {
+    setShowOnboarding(false)
+    localStorage.setItem('onboardingDone', '1')
+    if (!rec) return
+    // Apply filters directly to query without waiting for state
+    setLoading(true)
+    let q = supabase.from('listings').select('*', { count: 'exact' })
+      .gte('price_eur', 100)
+      .eq('country', 'EE')
+      .order('created_at', { ascending: false })
+      .range(0, PAGE_SIZE - 1)
+    if (rec.fuel) q = q.eq('fuel', rec.fuel)
+    if (rec.body) q = q.eq('body', rec.body)
+    if (rec.maxPrice) q = q.lte('price_eur', parseInt(rec.maxPrice))
+    if (rec.transmission) q = q.eq('transmission', rec.transmission)
+    if (rec.minYear) q = q.gte('year', parseInt(rec.minYear))
+    if (rec.minPower) q = q.not('power_kw', 'is', null).gte('power_kw', parseInt(rec.minPower))
+    q.then(({ data, count }) => {
+      setListings(data || [])
+      setTotal(count || 0)
+      setPage(0)
+      setLoading(false)
+      if (rec.fuel) setFuel(rec.fuel)
+      if (rec.body) setBodyType(rec.body)
+      if (rec.maxPrice) setMaxPrice(rec.maxPrice)
+      if (rec.transmission) setTransmission(rec.transmission)
+      if (rec.minYear) setMinYear(rec.minYear)
+    })
   }
 
   function doSearch() { saveSearch(); fetchListings(0) }
@@ -378,6 +672,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-slate-50">
+      {showOnboarding && <Onboarding onComplete={handleOnboardingComplete} />}
       <div className="bg-slate-900 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center gap-4">
           <button onClick={reset} className="flex items-baseline gap-2.5 hover:opacity-90 transition">
