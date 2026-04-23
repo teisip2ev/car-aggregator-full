@@ -135,6 +135,7 @@ function Onboarding({ onComplete }) {
   const [step, setStep] = useState(-1)
   const [answers, setAnswers] = useState({})
   const [budget, setBudget] = useState(15000)
+  const [maxCarMileage, setMaxCarMileage] = useState(150000)
   const [showSummary, setShowSummary] = useState(false)
   const [recommendation, setRecommendation] = useState(null)
 
@@ -162,24 +163,32 @@ function Onboarding({ onComplete }) {
     {
       id: 'budget',
       type: 'slider',
+      sliderKey: 'budget',
       question: 'Milline on sinu eelarve?',
       reason: 'Eelarve aitab filtreerida välja autod, mis on sinu jaoks realistlikud.',
     },
     {
+      id: 'carMileage',
+      type: 'slider',
+      sliderKey: 'carMileage',
+      question: 'Kui suure läbisõiduga autot otsid?',
+      reason: 'Suurema läbisõiduga autod on odavamad, kuid vajavad rohkem hooldust. Väiksema läbisõiduga autod on usaldusväärsemad.',
+    },
+    {
       id: 'age',
       question: 'Kui vana võiks auto olla?',
-      reason: 'Uuemad autod on tehnoloogiliselt arenenumad, vanemad aga taskukohasemad. See aitab seada aastavalikut.',
+      reason: 'Uuemad autod on tehnoloogiliselt arenenumad, vanemad aga taskukohasemad.',
       options: [
-        { label: 'Uus või peaaegu uus (kuni 3a)', value: '3', emoji: '✨' },
-        { label: 'Mitte vanem kui 7 aastat', value: '7', emoji: '👌' },
-        { label: 'Kuni 15 aastat', value: '15', emoji: '😁' },
+        { label: 'Kuni 3 aastat vana', value: '3', emoji: '✨' },
+        { label: 'Kuni 7 aastat vana', value: '7', emoji: '👌' },
+        { label: 'Kuni 15 aastat vana', value: '15', emoji: '😁' },
         { label: 'Pole vahet', value: '', emoji: '🤷' },
       ]
     },
     {
       id: 'priority',
       question: 'Mis on sulle olulisem?',
-      reason: 'See mõjutab mootori ja kütuse soovitust.',
+      reason: 'See mõjutab mootori ja kütuse soovitust ning filtreerib välja sobivad autod.',
       options: [
         { label: 'Jõudlus', value: 'performance', emoji: '⚡' },
         { label: 'Ökonoomsus', value: 'economy', emoji: '🌿' },
@@ -217,31 +226,35 @@ function Onboarding({ onComplete }) {
     let body = ''
     let transmission = ''
     let minYear = ''
+    let minPower = ''
+    let maxPower = ''
+    let drive = ''
 
     if (ans.fuel && ans.fuel !== 'recommend') {
       fuel = ans.fuel
     } else {
       if (ans.mileage === 'high' || (ans.mileage === 'medium' && ans.priority === 'economy')) {
         fuel = 'Diisel'
-      } else if (ans.priority === 'performance') {
-        fuel = 'Bensiin'
       } else if (ans.priority === 'economy' && ans.mileage === 'low') {
         fuel = 'Hübriid'
+      } else {
+        fuel = 'Bensiin'
       }
     }
 
     if (ans.passengers === 'large') body = 'Minivan'
     else if (ans.passengers === 'medium') body = 'Universaal'
-    else if (ans.priority === 'performance') body = 'Sedaan'
+    else if (ans.priority === 'performance' && ans.passengers === 'small') body = 'Sedaan'
 
     if (ans.transmission) transmission = ans.transmission
 
     if (ans.age) minYear = String(currentYear - parseInt(ans.age))
 
-    let minPower = ''
-    if (ans.priority === 'performance') minPower = '130'
+    if (ans.priority === 'performance') {
+      minPower = '130'
+    }
 
-    return { fuel, body, maxPrice: String(budget), transmission, minYear, minPower }
+    return { fuel, body, maxPrice: String(budget), transmission, minYear, minPower, maxCarMileage: String(maxCarMileage), sortBy: 'price_eur', sortDir: 'desc' }
   }
 
   function buildSummary(ans, rec) {
@@ -250,14 +263,16 @@ function Onboarding({ onComplete }) {
     const passLabel = { small: '1–2 inimest', medium: 'kuni 5 inimest', large: '6+' }
     const priorityLabel = { performance: 'jõudlus', economy: 'ökonoomsus', balance: 'tasakaal' }
 
-    lines.push(`🛣️ Läbisõit: ${mileageLabel[ans.mileage] || ''}`)
+    lines.push(`🛣️ Aastane läbisõit: ${mileageLabel[ans.mileage] || ''}`)
     lines.push(`👪 Reisijaid: ${passLabel[ans.passengers] || ''}`)
     lines.push(`💰 Eelarve: kuni ${budget.toLocaleString()} €`)
-    if (ans.age) lines.push(`📅 Vanus: kuni ${ans.age} aastat vana`)
+    lines.push(`🚙 Auto läbisõit: kuni ${maxCarMileage.toLocaleString()} km`)
+    if (ans.age) lines.push(`📅 Vanus: kuni ${ans.age} aastat`)
     lines.push(`⚖️ Prioriteet: ${priorityLabel[ans.priority] || ''}`)
     if (ans.transmission) lines.push(`🛵 Käigukast: ${ans.transmission}`)
     if (rec.fuel) lines.push(`⛽ Kütus: ${rec.fuel}`)
     if (rec.body) lines.push(`🚗 Keretüüp: ${rec.body}`)
+    if (rec.minPower) lines.push(`⚡ Min võimsus: ${rec.minPower}kW`)
 
     return lines
   }
@@ -276,7 +291,8 @@ function Onboarding({ onComplete }) {
   }
 
   function handleSliderNext() {
-    const newAnswers = { ...answers, budget: String(budget) }
+    const q = questions[step]
+    const newAnswers = { ...answers, [q.id]: q.sliderKey === 'budget' ? String(budget) : String(maxCarMileage) }
     setAnswers(newAnswers)
     setStep(step + 1)
   }
@@ -360,16 +376,37 @@ function Onboarding({ onComplete }) {
           {q.type === 'slider' ? (
             <div>
               <div className="text-center mb-4">
-                <span className="text-4xl font-black text-slate-900">{budget.toLocaleString()}</span>
-                <span className="text-2xl font-black text-cyan-600"> €</span>
+                {q.sliderKey === 'budget' ? (
+                  <>
+                    <span className="text-4xl font-black text-slate-900">{budget.toLocaleString()}</span>
+                    <span className="text-2xl font-black text-cyan-600"> €</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-4xl font-black text-slate-900">{maxCarMileage.toLocaleString()}</span>
+                    <span className="text-2xl font-black text-cyan-600"> km</span>
+                  </>
+                )}
               </div>
-              <input type="range" min="2000" max="80000" step="1000" value={budget}
-                onChange={e => setBudget(parseInt(e.target.value))}
-                className="w-full accent-cyan-600 mb-2" />
-              <div className="flex justify-between text-xs text-slate-400 mb-6">
-                <span>2 000 €</span>
-                <span>80 000 €</span>
-              </div>
+              {q.sliderKey === 'budget' ? (
+                <>
+                  <input type="range" min="2000" max="80000" step="1000" value={budget}
+                    onChange={e => setBudget(parseInt(e.target.value))}
+                    className="w-full accent-cyan-600 mb-2" />
+                  <div className="flex justify-between text-xs text-slate-400 mb-6">
+                    <span>2 000 €</span><span>80 000 €</span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <input type="range" min="10000" max="300000" step="5000" value={maxCarMileage}
+                    onChange={e => setMaxCarMileage(parseInt(e.target.value))}
+                    className="w-full accent-cyan-600 mb-2" />
+                  <div className="flex justify-between text-xs text-slate-400 mb-6">
+                    <span>10 000 km</span><span>300 000 km</span>
+                  </div>
+                </>
+              )}
               <button onClick={handleSliderNext} className="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-3.5 rounded-2xl transition">
                 Edasi →
               </button>
@@ -507,12 +544,13 @@ export default function Home() {
     setShowOnboarding(false)
     localStorage.setItem('onboardingDone', '1')
     if (!rec) return
-    // Apply filters directly to query without waiting for state
     setLoading(true)
+    const sortField = rec.sortBy || 'price_eur'
+    const sortAsc = rec.sortDir === 'asc'
     let q = supabase.from('listings').select('*', { count: 'exact' })
       .gte('price_eur', 100)
       .eq('country', 'EE')
-      .order('created_at', { ascending: false })
+      .order(sortField, { ascending: sortAsc })
       .range(0, PAGE_SIZE - 1)
     if (rec.fuel) q = q.eq('fuel', rec.fuel)
     if (rec.body) q = q.eq('body', rec.body)
@@ -520,6 +558,7 @@ export default function Home() {
     if (rec.transmission) q = q.eq('transmission', rec.transmission)
     if (rec.minYear) q = q.gte('year', parseInt(rec.minYear))
     if (rec.minPower) q = q.not('power_kw', 'is', null).gte('power_kw', parseInt(rec.minPower))
+    if (rec.maxCarMileage) q = q.lte('mileage_km', parseInt(rec.maxCarMileage))
     q.then(({ data, count }) => {
       setListings(data || [])
       setTotal(count || 0)
@@ -530,6 +569,9 @@ export default function Home() {
       if (rec.maxPrice) setMaxPrice(rec.maxPrice)
       if (rec.transmission) setTransmission(rec.transmission)
       if (rec.minYear) setMinYear(rec.minYear)
+      if (rec.maxCarMileage) setMaxMileage(rec.maxCarMileage)
+      if (rec.sortBy) setSortBy(rec.sortBy)
+      if (rec.sortDir) setSortDir(rec.sortDir)
     })
   }
 
