@@ -1,6 +1,7 @@
 import urllib.request
 import json
 import time
+from datetime import date as _date
 from supabase import create_client
 from config import SUPABASE_URL, SUPABASE_KEY
 
@@ -103,7 +104,7 @@ for make_name, make_id in MAKES.items():
             for attempt in range(3):
                 try:
                     supabase.table('listings').upsert(listings, on_conflict='url').execute()
-                    history = [{'url': l['url'], 'price_eur': l['price_eur']} for l in listings if l.get('price_eur')]
+                    history = [{'url': l['url'], 'price_eur': l['price_eur'], 'scraped_date': str(_date.today())} for l in listings if l.get('price_eur')]
                     if history:
                         supabase.table('price_history').insert(history).execute()
                     make_total += len(listings)
