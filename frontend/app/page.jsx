@@ -30,7 +30,7 @@ function HistoryCheck() {
 
 function PriceTag({ car, openPopup, setOpenPopup }) {
   const open = openPopup === car.id
-  const popupClass = "absolute top-6 right-0 z-20 bg-white border border-slate-200 rounded-xl shadow-xl p-3 w-56 text-xs text-slate-700"
+  const popupClass = "absolute top-6 left-0 z-20 bg-white border border-slate-200 rounded-xl shadow-xl p-3 w-56 text-xs text-slate-700"
   useEffect(() => {
     if (!open) return
     function handleClick(e) {
@@ -94,36 +94,40 @@ function FuelCost({ car }) {
   }
   const config = configs[car.fuel]
   if (!config) return null
-  const annualCost = Math.round((km / 100) * config.consumption * config.price)
+  const annualFuel = Math.round((km / 100) * config.consumption * config.price)
+const tax = car.annual_tax || car.estimated_tax || 0
+const totalAnnual = annualFuel + tax
   return (
     <div className="relative inline-block" data-fuelcost>
       <button onClick={e => { e.preventDefault(); setOpen(!open) }} className="text-xs px-2 py-0.5 rounded border font-medium border-slate-200 bg-slate-50 text-slate-500 hover:bg-slate-100 transition">
         Kulud ⓘ
       </button>
       {open && (
-        <div className="absolute top-6 right-0 z-20 bg-white border border-slate-200 rounded-xl shadow-xl p-3 w-64 text-xs text-slate-700" data-fuelcost style={{maxWidth: 'calc(100vw - 4rem)'}} onClick={e => e.preventDefault()} onMouseDown={e => e.stopPropagation()} onTouchStart={e => e.stopPropagation()}>
+        <div className="absolute top-6 right-0 z-20 bg-white border border-slate-200 rounded-xl shadow-xl p-3 w-64 text-xs text-slate-700" data-fuelcost>
           <p className="font-semibold mb-2">Hinnanguline kütusekulu</p>
           <div className="mb-3">
             <div className="flex justify-between mb-1">
               <span className="text-slate-500">Aastane läbisõit</span>
               <span className="font-medium">{km.toLocaleString()} km</span>
             </div>
-            <input type="range" min="5000" max="50000" step="1000" value={km}
-              onChange={e => { e.stopPropagation(); setKm(parseInt(e.target.value)) }}
-              onMouseDown={e => { e.stopPropagation(); e.preventDefault(); e.target.focus() }}
+            <input
+              type="range" min="5000" max="50000" step="1000" value={km}
+              className="w-full accent-cyan-600"
+              onChange={e => setKm(parseInt(e.target.value))}
+              onMouseDown={e => { e.stopPropagation(); e.target.focus() }}
               onTouchStart={e => e.stopPropagation()}
-              className="w-full accent-cyan-600" onClick={e => e.preventDefault()} />
+              onClick={e => e.preventDefault()}
+            />
             <div className="flex justify-between text-slate-400 mt-0.5"><span>5 000</span><span>50 000</span></div>
           </div>
-          <div className="bg-slate-50 rounded-lg p-2 mb-2">
+          <div className="bg-slate-50 rounded-lg p-2 space-y-1">
             <div className="flex justify-between"><span className="text-slate-500">Kütus</span><span>{car.fuel}</span></div>
             <div className="flex justify-between"><span className="text-slate-500">Tarbimine</span><span>{config.label}</span></div>
-            <div className="flex justify-between font-semibold mt-1 pt-1 border-t border-slate-200">
-              <span>Aastane kütusekulu</span>
-              <span className="text-cyan-600">~{annualCost.toLocaleString()} €</span>
-            </div>
+            <div className="flex justify-between"><span className="text-slate-500">Aastane kütusekulu</span><span>~{annualFuel.toLocaleString()} €</span></div>
+            {tax > 0 && <div className="flex justify-between"><span className="text-slate-500">Automaks {car.annual_tax ? '' : '(hinnang)'}</span><span>~{tax.toLocaleString()} €/a</span></div>}
+            <div className="flex justify-between font-semibold pt-1 border-t border-slate-200"><span>Aastane kogukulu</span><span className="text-cyan-600">~{totalAnnual.toLocaleString()} €</span></div>
           </div>
-          <p className="text-slate-400">Hinnang põhineb keskmistel näitajatel.</p>
+          <p className="text-slate-400 mt-2">Hinnang põhineb keskmistel näitajatel.</p>
         </div>
       )}
     </div>
@@ -510,11 +514,11 @@ export default function Home() {
     const sortOrder = sd || sortDir
     const from = pageNum * PAGE_SIZE
     const to = from + PAGE_SIZE - 1
-    let q = supabase.from('listings').select('*', { count: 'exact' }).gte('price_eur', 100).order(sortField, { ascending: sortOrder === 'asc' }).range(from, to)
+let q = supabase.from('listings').select('*', { count: 'exact' })
     q = buildQuery(q)
     const { data, error, count } = await q
     if (error) { console.error(error); setLoading(false); return }
-    setListings(data || [])
+      setListings(data || [])
     setTotal(count || 0)
     setPage(pageNum)
     setLoading(false)
@@ -777,8 +781,7 @@ export default function Home() {
             <div className="space-y-3">
               {listings.map(car => (
                 <a key={car.id} href={car.url} target="_blank" rel="noopener noreferrer" draggable="false"
-                  className="flex bg-white border border-slate-200 rounded-2xl overflow-hidden hover:border-cyan-400 hover:shadow-lg hover:shadow-cyan-50 transition-all duration-200 group relative">
-                  <div className="w-36 sm:w-52 h-28 sm:h-36 flex-shrink-0 bg-slate-100 overflow-hidden">
+className="flex bg-white border border-slate-200 rounded-2xl hover:border-cyan-400 hover:shadow-lg hover:shadow-cyan-50 transition-all duration-200 group relative">                  <div className="w-36 sm:w-52 h-28 sm:h-36 flex-shrink-0 bg-slate-100 overflow-hidden">
                     {car.image_url
                       ? <img src={car.image_url} alt={car.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                       : <div className="w-full h-full flex items-center justify-center text-slate-300 text-xs">Pilt puudub</div>
