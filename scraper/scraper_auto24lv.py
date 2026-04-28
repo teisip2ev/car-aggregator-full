@@ -4,6 +4,14 @@ from config import SUPABASE_URL, SUPABASE_KEY
 import re
 import time
 
+BODY_TYPE_MAP = {
+    'Sedan': 'Sedaan', 'Hatchback': 'Luukpara', 'Wagon': 'Universaal',
+    'Estate': 'Universaal', 'SUV': 'Maastur', 'Crossover': 'Maastur',
+    'Coupe': 'Kupee', 'Convertible': 'Kabriolett', 'Cabrio': 'Kabriolett',
+    'Minivan': 'Minivan', 'Van': 'Kaubik', 'Pickup': 'Pikap',
+    'Offroad': 'Maastur', 'Cabriolet': 'Kabriolett',
+}
+
 MAKES = {
     'Alfa Romeo': 9, 'Audi': 2, 'Bentley': 247, 'BMW': 4, 'Cadillac': 44,
     'Chevrolet': 31, 'Chrysler': 28, 'Citroen': 20, 'CUPRA': 1434, 'Dacia': 254,

@@ -1,6 +1,14 @@
 import urllib.request
 import json
 import time
+
+BODY_TYPE_MAP = {
+    'Sedan': 'Sedaan', 'Hatchback': 'Luukpara', 'Wagon': 'Universaal',
+    'Estate': 'Universaal', 'SUV': 'Maastur', 'Crossover': 'Maastur',
+    'Coupe': 'Kupee', 'Convertible': 'Kabriolett', 'Cabrio': 'Kabriolett',
+    'Minivan': 'Minivan', 'Van': 'Kaubik', 'Pickup': 'Pikap',
+    'Offroad': 'Maastur', 'Cabriolet': 'Kabriolett',
+}
 from datetime import date as _date
 from supabase import create_client
 from config import SUPABASE_URL, SUPABASE_KEY
@@ -65,7 +73,7 @@ def parse_listing(item, make_name):
             'price_eur': int(price), 'year': year,
             'mileage_km': int(mileage) if mileage else None,
             'fuel': fuel, 'transmission': transmission,
-            'body': item.get('vehicleBodyType', {}).get('name'),
+            'body': BODY_TYPE_MAP.get(item.get('vehicleBodyType', {}).get('name', ''), item.get('vehicleBodyType', {}).get('name')),
             'drive': drive, 'image_url': image_url, 'source': 'autodiiler',
             'country': 'EE'
         }

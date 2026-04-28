@@ -5,6 +5,14 @@ import json
 import re
 import time
 
+BODY_TYPE_MAP = {
+    'Sedan': 'Sedaan', 'Hatchback': 'Luukpara', 'Wagon': 'Universaal',
+    'Estate': 'Universaal', 'SUV': 'Maastur', 'Crossover': 'Maastur',
+    'Coupe': 'Kupee', 'Convertible': 'Kabriolett', 'Cabrio': 'Kabriolett',
+    'Minivan': 'Minivan', 'Van': 'Kaubik', 'Pickup': 'Pikap',
+    'Offroad': 'Maastur', 'Cabriolet': 'Kabriolett',
+}
+
 MAKES = {
     'Alfa Romeo': (99, 'alfa-romeo'), 'Audi': (12, 'audi'), 'Bentley': (105, 'bentley'),
     'BMW': (15, 'bmw'), 'Cadillac': (104, 'cadillac'), 'Chevrolet': (101, 'chevrolet'),
@@ -83,7 +91,7 @@ def parse_item(item, make_name):
             'price_eur': int(price), 'year': int(year) if year else None,
             'mileage_km': int(mileage) if mileage else None,
             'fuel': fuel, 'transmission': transmission,
-            'body': item.get('bodyType'), 'drive': None,
+            'body': BODY_TYPE_MAP.get(item.get('bodyType', ''), item.get('bodyType')), 'drive': None,
             'image_url': image_url, 'source': 'autoportaal',
             'country': 'EE'
         }
