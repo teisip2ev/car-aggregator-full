@@ -815,11 +815,16 @@ export default function Home() {
                         {car.body && <><span className="text-slate-200 pr-3 hidden sm:inline">|</span><span className="pr-3 hidden sm:inline">{car.body}</span></>}
                         {car.drive && <><span className="text-slate-200 pr-3 hidden sm:inline">|</span><span className="hidden sm:inline">{car.drive}</span></>}
                       </div>
-                      <div className="mt-2 flex items-center gap-2 flex-wrap">
-                        <span className={"text-xs px-2 py-0.5 rounded-full font-semibold " + (SOURCE_COLORS[car.source] || 'bg-slate-100 text-slate-600')}>
-                          {car.source}
-                        </span>
-                        {car.price_drop > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-x-2 gap-y-1 items-center">
+<span className={"text-xs px-2 py-0.5 rounded-full font-semibold " + (SOURCE_COLORS[car.source] || 'bg-slate-100 text-slate-600')}>
+  {car.source}
+</span>
+{car.created_at && (() => {
+  const days = Math.floor((Date.now() - new Date(car.created_at)) / 86400000)
+  const label = days === 0 ? 'Täna lisatud' : days === 1 ? '1 päev turul' : `${days} päeva turul`
+  const color = days <= 3 ? 'bg-blue-50 text-blue-600 border-blue-200' : days <= 14 ? 'bg-slate-50 text-slate-500 border-slate-200' : days <= 30 ? 'bg-amber-50 text-amber-600 border-amber-200' : 'bg-red-50 text-red-500 border-red-200'
+  return <span className={"text-xs px-2 py-0.5 rounded-full border " + color}>{label}</span>
+})()}                        {car.price_drop > 0 && (
                           <span className="text-xs px-2 py-0.5 rounded-full font-semibold bg-emerald-100 text-emerald-700">
                             ↓ {car.price_drop?.toLocaleString()}€ odavamaks
                           </span>
