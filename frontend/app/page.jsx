@@ -95,8 +95,8 @@ function FuelCost({ car }) {
   const config = configs[car.fuel]
   if (!config) return null
   const annualFuel = Math.round((km / 100) * config.consumption * config.price)
-const tax = car.annual_tax || car.estimated_tax || 0
-const totalAnnual = annualFuel + tax
+  const tax = car.annual_tax || car.estimated_tax || 0
+  const totalAnnual = annualFuel + tax
   return (
     <div className="relative inline-block" data-fuelcost>
       <button onClick={e => { e.preventDefault(); setOpen(!open) }} className="text-xs px-2 py-0.5 rounded border font-medium border-slate-200 bg-slate-50 text-slate-500 hover:bg-slate-100 transition">
@@ -133,7 +133,6 @@ const totalAnnual = annualFuel + tax
     </div>
   )
 }
-
 
 function Onboarding({ onComplete }) {
   const [step, setStep] = useState(-1)
@@ -231,8 +230,6 @@ function Onboarding({ onComplete }) {
     let transmission = ''
     let minYear = ''
     let minPower = ''
-    let maxPower = ''
-    let drive = ''
 
     if (ans.fuel && ans.fuel !== 'recommend') {
       fuel = ans.fuel
@@ -251,12 +248,8 @@ function Onboarding({ onComplete }) {
     else if (ans.priority === 'performance' && ans.passengers === 'small') body = 'Sedaan'
 
     if (ans.transmission) transmission = ans.transmission
-
     if (ans.age) minYear = String(currentYear - parseInt(ans.age))
-
-    if (ans.priority === 'performance') {
-      minPower = '130'
-    }
+    if (ans.priority === 'performance') minPower = '130'
 
     return { fuel, body, maxPrice: String(budget), transmission, minYear, minPower, maxCarMileage: String(maxCarMileage), sortBy: 'price_eur', sortDir: 'desc' }
   }
@@ -432,7 +425,6 @@ function Onboarding({ onComplete }) {
   )
 }
 
-
 export default function Home() {
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [listings, setListings] = useState([])
@@ -440,6 +432,8 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
   const [showFilters, setShowFilters] = useState(false)
   const [openPopup, setOpenPopup] = useState(null)
+  const [compareList, setCompareList] = useState([])
+  const [showCompare, setShowCompare] = useState(false)
   const [country, setCountry] = useState('EE')
   const [vehicleType, setVehicleType] = useState('')
   const [make, setMake] = useState('')
@@ -514,15 +508,25 @@ export default function Home() {
     const sortOrder = sd || sortDir
     const from = pageNum * PAGE_SIZE
     const to = from + PAGE_SIZE - 1
-let q = supabase.from('listings').select('*', { count: 'exact' })
+    let q = supabase.from('listings').select('*', { count: 'exact' })
     q = buildQuery(q)
     const { data, error, count } = await q
     if (error) { console.error(error); setLoading(false); return }
-      setListings(data || [])
+    setListings(data || [])
     setTotal(count || 0)
     setPage(pageNum)
     setLoading(false)
     window.scrollTo(0, 0)
+  }
+
+  function toggleCompare(e, car) {
+    e.preventDefault()
+    e.stopPropagation()
+    setCompareList(prev => {
+      if (prev.find(c => c.id === car.id)) return prev.filter(c => c.id !== car.id)
+      if (prev.length >= 3) return prev
+      return [...prev, car]
+    })
   }
 
   function saveSearch() {
@@ -779,52 +783,68 @@ let q = supabase.from('listings').select('*', { count: 'exact' })
             </div>
           ) : (
             <div className="space-y-3">
-              {listings.map(car => (
-                <a key={car.id} href={car.url} target="_blank" rel="noopener noreferrer" draggable="false"
-className="flex bg-white border border-slate-200 rounded-2xl hover:border-cyan-400 hover:shadow-lg hover:shadow-cyan-50 transition-all duration-200 group relative">                  <div className="w-36 sm:w-52 h-28 sm:h-36 flex-shrink-0 bg-slate-100 overflow-hidden">
-                    {car.image_url
-                      ? <img src={car.image_url} alt={car.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                      : <div className="w-full h-full flex items-center justify-center text-slate-300 text-xs">Pilt puudub</div>
-                    }
-                  </div>
-                  <div className="flex-1 p-3 sm:p-4 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <h3 className="font-bold text-slate-900 truncate text-sm sm:text-base leading-tight">{car.title}</h3>
-                        <p className="text-xs text-slate-400 truncate mt-0.5 hidden sm:block">{car.description}</p>
+              {listings.map(car => {
+                const isInCompare = compareList.find(c => c.id === car.id)
+                return (
+                  <a key={car.id} href={car.url} target="_blank" rel="noopener noreferrer" draggable="false"
+                    className={"flex bg-white border rounded-2xl hover:shadow-lg transition-all duration-200 group relative " + (isInCompare ? 'border-cyan-400 shadow-md shadow-cyan-50' : 'border-slate-200 hover:border-cyan-400 hover:shadow-cyan-50')}>
+                    <div className="w-36 sm:w-52 h-28 sm:h-36 flex-shrink-0 bg-slate-100 overflow-hidden rounded-l-2xl">
+                      {car.image_url
+                        ? <img src={car.image_url} alt={car.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                        : <div className="w-full h-full flex items-center justify-center text-slate-300 text-xs">Pilt puudub</div>
+                      }
+                    </div>
+                    <div className="flex-1 p-3 sm:p-4 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <h3 className="font-bold text-slate-900 truncate text-sm sm:text-base leading-tight">{car.title}</h3>
+                          <p className="text-xs text-slate-400 truncate mt-0.5 hidden sm:block">{car.description}</p>
+                        </div>
+                        <div className="flex-shrink-0 text-right flex flex-col items-end gap-1">
+                          <p className="text-lg sm:text-2xl font-black text-cyan-600">{car.price_eur?.toLocaleString()} €</p>
+                          {(car.country === 'EE' || car.source === 'auto24lv') && <PriceTag car={car} openPopup={openPopup} setOpenPopup={setOpenPopup} />}
+                          {car.country === 'EE' && <HistoryCheck />}
+                          {(car.country === 'EE' || car.source === 'auto24lv') && <FuelCost car={car} />}
+                        </div>
                       </div>
-                      <div className="flex-shrink-0 text-right flex flex-col items-end gap-1">
-<p className="text-lg sm:text-2xl font-black text-cyan-600">{car.price_eur?.toLocaleString()} €</p>                        
-{(car.country === 'EE' || car.source === 'auto24lv') && <PriceTag car={car} openPopup={openPopup} setOpenPopup={setOpenPopup} />}
-{car.country === 'EE' && <HistoryCheck />}
-{(car.country === 'EE' || car.source === 'auto24lv') && <FuelCost car={car} />}                      </div>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-y-0.5 mt-2 text-sm text-slate-500">
-                      {car.year && <span className="font-bold text-slate-800 pr-3">{car.year}</span>}
-                      {car.mileage_km && <><span className="text-slate-200 pr-3">|</span><span className="pr-3">{car.mileage_km?.toLocaleString()} km</span></>}
-                      {car.fuel && <><span className="text-slate-200 pr-3">|</span><span className="pr-3">{car.fuel}</span></>}
-                      {car.transmission && <><span className="text-slate-200 pr-3">|</span><span className="pr-3">{car.transmission}</span></>}
-                      {car.body && <><span className="text-slate-200 pr-3 hidden sm:inline">|</span><span className="pr-3 hidden sm:inline">{car.body}</span></>}
-                      {car.drive && <><span className="text-slate-200 pr-3 hidden sm:inline">|</span><span className="hidden sm:inline">{car.drive}</span></>}
-                    </div>
-                    <div className="mt-2 flex items-center gap-2 flex-wrap">
-                      <span className={"text-xs px-2 py-0.5 rounded-full font-semibold " + (SOURCE_COLORS[car.source] || 'bg-slate-100 text-slate-600')}>
-                        {car.source}
-                      </span>
-                      {car.price_drop > 0 && (
-                        <span className="text-xs px-2 py-0.5 rounded-full font-semibold bg-emerald-100 text-emerald-700">
-                          ↓ {car.price_drop?.toLocaleString()}€ odavamaks
+                      <div className="flex flex-wrap items-center gap-y-0.5 mt-2 text-sm text-slate-500">
+                        {car.year && <span className="font-bold text-slate-800 pr-3">{car.year}</span>}
+                        {car.mileage_km && <><span className="text-slate-200 pr-3">|</span><span className="pr-3">{car.mileage_km?.toLocaleString()} km</span></>}
+                        {car.fuel && <><span className="text-slate-200 pr-3">|</span><span className="pr-3">{car.fuel}</span></>}
+                        {car.transmission && <><span className="text-slate-200 pr-3">|</span><span className="pr-3">{car.transmission}</span></>}
+                        {car.body && <><span className="text-slate-200 pr-3 hidden sm:inline">|</span><span className="pr-3 hidden sm:inline">{car.body}</span></>}
+                        {car.drive && <><span className="text-slate-200 pr-3 hidden sm:inline">|</span><span className="hidden sm:inline">{car.drive}</span></>}
+                      </div>
+                      <div className="mt-2 flex items-center gap-2 flex-wrap">
+                        <span className={"text-xs px-2 py-0.5 rounded-full font-semibold " + (SOURCE_COLORS[car.source] || 'bg-slate-100 text-slate-600')}>
+                          {car.source}
                         </span>
-                      )}
+                        {car.price_drop > 0 && (
+                          <span className="text-xs px-2 py-0.5 rounded-full font-semibold bg-emerald-100 text-emerald-700">
+                            ↓ {car.price_drop?.toLocaleString()}€ odavamaks
+                          </span>
+                        )}
+                        <button
+                          onClick={e => toggleCompare(e, car)}
+                          className={"text-xs px-2 py-0.5 rounded-full font-semibold border transition " +
+                            (isInCompare
+                              ? 'bg-cyan-600 text-white border-cyan-600'
+                              : compareList.length >= 3
+                              ? 'border-slate-100 text-slate-300 cursor-not-allowed'
+                              : 'border-slate-200 text-slate-400 hover:border-cyan-400 hover:text-cyan-600')}
+                        >
+                          {isInCompare ? '✓ Võrdluses' : '+ Võrdle'}
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                </a>
-              ))}
+                  </a>
+                )
+              })}
             </div>
           )}
 
           {totalPages > 1 && (
-            <div className="flex justify-center gap-1.5 mt-6 pb-8">
+            <div className={"flex justify-center gap-1.5 mt-6 " + (compareList.length > 0 ? 'pb-24' : 'pb-8')}>
               <button onClick={() => fetchListings(page - 1)} disabled={page === 0} className="px-4 py-2 border border-slate-200 rounded-xl text-sm disabled:opacity-30 hover:bg-white bg-white text-slate-700 shadow-sm transition">←</button>
               {[...Array(Math.min(5, totalPages))].map((_, i) => {
                 const pageNum = Math.max(0, Math.min(page - 2, totalPages - 5)) + i
@@ -835,6 +855,111 @@ className="flex bg-white border border-slate-200 rounded-2xl hover:border-cyan-4
           )}
         </div>
       </div>
+
+      {/* Compare sticky bar */}
+      {compareList.length > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 z-40 bg-slate-900 border-t border-slate-700 shadow-2xl px-4 py-3">
+          <div className="max-w-7xl mx-auto flex items-center gap-3">
+            <span className="text-slate-400 text-xs font-semibold uppercase tracking-widest hidden sm:block">Võrdlus</span>
+            <div className="flex gap-2 flex-1 overflow-x-auto">
+              {compareList.map(car => (
+                <div key={car.id} className="flex items-center gap-1.5 bg-slate-800 rounded-lg px-2 py-1 flex-shrink-0">
+                  <span className="text-white text-xs font-semibold truncate max-w-28 sm:max-w-40">{car.title}</span>
+                  <button onClick={e => toggleCompare(e, car)} className="text-slate-400 hover:text-white text-xs ml-1 flex-shrink-0">✕</button>
+                </div>
+              ))}
+              {[...Array(3 - compareList.length)].map((_, i) => (
+                <div key={i} className="hidden sm:flex items-center justify-center bg-slate-800/50 border border-dashed border-slate-700 rounded-lg px-4 py-1 text-slate-600 text-xs flex-shrink-0">
+                  + Lisa auto
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={() => setShowCompare(true)}
+              disabled={compareList.length < 2}
+              className="flex-shrink-0 bg-cyan-600 hover:bg-cyan-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold px-4 py-2 rounded-xl text-sm transition"
+            >
+              Võrdle ({compareList.length})
+            </button>
+            <button onClick={() => setCompareList([])} className="flex-shrink-0 text-slate-500 hover:text-white text-xs transition">Tühista</button>
+          </div>
+        </div>
+      )}
+
+      {/* Compare modal */}
+      {showCompare && compareList.length >= 2 && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-slate-900/80 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-5xl mt-8 mb-8 overflow-hidden">
+            <div className="bg-slate-900 px-6 py-4 flex items-center justify-between">
+              <h2 className="text-white font-black text-lg">Autode võrdlus</h2>
+              <button onClick={() => setShowCompare(false)} className="text-slate-400 hover:text-white text-xl transition">✕</button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-slate-100">
+                    <th className="text-left px-6 py-3 text-slate-400 font-semibold text-xs uppercase tracking-widest w-36">Näitaja</th>
+                    {compareList.map(car => (
+                      <th key={car.id} className="px-4 py-3 text-left min-w-48">
+                        {car.image_url && (
+                          <img src={car.image_url} alt={car.title} className="w-full h-28 object-cover rounded-xl mb-2" />
+                        )}
+                        <div className="font-bold text-slate-900 text-sm leading-tight">{car.title}</div>
+                        <div className="text-cyan-600 font-black text-xl mt-0.5">{car.price_eur?.toLocaleString()} €</div>
+                        <a href={car.url} target="_blank" rel="noopener noreferrer"
+                          onClick={e => e.stopPropagation()}
+                          className="text-xs text-cyan-500 hover:underline mt-1 inline-block">
+                          Ava kuulutus →
+                        </a>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    { label: 'Aasta', key: 'year', best: 'max' },
+                    { label: 'Läbisõit', key: 'mileage_km', format: v => v ? v.toLocaleString() + ' km' : '—', best: 'min' },
+                    { label: 'Kütus', key: 'fuel' },
+                    { label: 'Käigukast', key: 'transmission' },
+                    { label: 'Keretüüp', key: 'body' },
+                    { label: 'Vedav sild', key: 'drive' },
+                    { label: 'Võimsus', key: 'power_kw', format: v => v ? v + ' kW' : '—', best: 'max' },
+                    { label: 'Mootor', key: 'engine_cc', format: v => v ? (v / 1000).toFixed(1) + 'L' : '—' },
+                    { label: 'Hind', key: 'price_eur', format: v => v ? v.toLocaleString() + ' €' : '—', best: 'min' },
+                    { label: 'Hinnaskoor', key: 'price_score', format: v => v != null ? (v > 0 ? '+' : '') + v + '%' : '—', best: 'min' },
+                    { label: 'Allikas', key: 'source' },
+                    { label: 'Riik', key: 'country' },
+                  ].map((row, i) => {
+                    const vals = compareList.map(c => c[row.key])
+                    const numericVals = vals.map(v => parseFloat(v)).filter(v => !isNaN(v))
+                    const bestVal = row.best === 'min' ? Math.min(...numericVals) : row.best === 'max' ? Math.max(...numericVals) : null
+                    return (
+                      <tr key={row.key} className={i % 2 === 0 ? 'bg-slate-50' : 'bg-white'}>
+                        <td className="px-6 py-3 text-xs font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">{row.label}</td>
+                        {compareList.map(car => {
+                          const val = car[row.key]
+                          const display = row.format ? row.format(val) : (val || '—')
+                          const numericVal = parseFloat(val)
+                          const isBest = bestVal !== null && !isNaN(numericVal) && numericVal === bestVal && numericVals.length > 1
+                          return (
+                            <td key={car.id} className={"px-4 py-3 font-semibold " + (isBest ? 'text-emerald-600' : 'text-slate-700')}>
+                              {display} {isBest && <span className="text-emerald-500 text-xs">✓</span>}
+                            </td>
+                          )
+                        })}
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+              <p className="text-xs text-slate-400">✓ tähistab parimat väärtust — madalaim hind/läbisõit, uusim aasta, suurim võimsus.</p>
+              <button onClick={() => setShowCompare(false)} className="text-sm font-semibold text-slate-500 hover:text-slate-800 transition">Sulge</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

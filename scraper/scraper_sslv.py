@@ -1,7 +1,7 @@
 import urllib.request
 import re
 import time
-from datetime import date as _date
+from datetime import date as _date, datetime, timezone
 from supabase import create_client
 from config import SUPABASE_URL, SUPABASE_KEY
 
@@ -34,6 +34,9 @@ FUEL_MAP = {
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
+RUN_START = datetime.now(timezone.utc).isoformat()
+SAFETY_MINIMUM = 50
+
 def fetch_page(url):
     req = urllib.request.Request(url, headers={
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -41,15 +44,6 @@ def fetch_page(url):
     })
     resp = urllib.request.urlopen(req, timeout=15)
     return resp.read().decode('utf-8', errors='ignore')
-
-def parse_mileage(raw):
-    raw = raw.strip().lower().replace(' ', '').replace(',', '')
-    try:
-        if 'thd' in raw:
-            return int(float(raw.replace('thd.', '').replace('thd', '')) * 1000)
-        return int(re.sub(r'[^\d]', '', raw))
-    except:
-        return None
 
 def parse_price(raw):
     try:
@@ -77,12 +71,10 @@ def parse_listing(row, make_name):
         engine = cells[2].strip() if len(cells) > 2 else ''
         price_raw = cells[3].strip() if len(cells) > 3 else None
         price = parse_price(price_raw) if price_raw else None
-        mileage = None
 
         if not price or price < 100:
             return None
 
-        # Guess transmission from title
         title_lower = title.lower()
         transmission = None
         for key, val in TRANSMISSION_MAP.items():
@@ -90,9 +82,7 @@ def parse_listing(row, make_name):
                 transmission = val
                 break
 
-        # Guess fuel from title/engine
         fuel = None
-        engine = cells[2].strip() if len(cells) > 2 else ''
         combined = (title_lower + ' ' + engine.lower())
         for key, val in FUEL_MAP.items():
             if key in combined:
@@ -107,7 +97,7 @@ def parse_listing(row, make_name):
             'description': None,
             'price_eur': price,
             'year': year,
-            'mileage_km': mileage,
+            'mileage_km': None,
             'fuel': fuel,
             'transmission': transmission,
             'body': None,
@@ -115,6 +105,7 @@ def parse_listing(row, make_name):
             'image_url': image_url,
             'source': 'sslv',
             'country': 'LV',
+            'last_seen_at': RUN_START,
         }
     except:
         return None
@@ -153,14 +144,12 @@ def scrape_make(make_slug, make_name):
                     print(f'    Save error (attempt {attempt+1}): {e}')
                     time.sleep(10)
 
-        # Check for next page
         if f'page{page+1}.html' not in html:
             break
         page += 1
         time.sleep(2)
     return total
 
-grand_total = 0
 SLUG_TO_NAME = {
     'mercedes': 'Mercedes-Benz',
     'land-rover': 'Land Rover',
@@ -170,6 +159,7 @@ SLUG_TO_NAME = {
     'cupra': 'CUPRA',
 }
 
+grand_total = 0
 for make_slug in MAKES:
     make_name = SLUG_TO_NAME.get(make_slug, make_slug.replace('-', ' ').title())
     print(f'\nScraping {make_name}...')
@@ -178,4 +168,19 @@ for make_slug in MAKES:
     grand_total += count
     time.sleep(3)
 
-print(f'\nAll done. Total: {grand_total}')
+print(f'\nAll done. Total scraped: {grand_total}')
+
+if grand_total >= SAFETY_MINIMUM:
+    print(f"\nCleaning up stale sslv listings (not seen since {RUN_START})...")
+    try:
+        result = supabase.table("listings") \
+            .delete() \
+            .eq("source", "sslv") \
+            .lt("last_seen_at", RUN_START) \
+            .execute()
+        deleted = len(result.data) if result.data else 0
+        print(f"Deleted {deleted} stale listings from sslv")
+    except Exception as e:
+        print(f"Cleanup error: {e}")
+else:
+    print(f"\nSkipping cleanup — only scraped {grand_total} listings (minimum is {SAFETY_MINIMUM}). Something may have gone wrong.")

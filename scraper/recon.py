@@ -3,6 +3,7 @@ from supabase import create_client
 from config import SUPABASE_URL, SUPABASE_KEY
 import re
 import time
+from datetime import datetime, timezone
 
 MAKES = {
     'Alfa Romeo': 9, 'Audi': 2, 'Bentley': 247, 'BMW': 4, 'Cadillac': 44,
@@ -17,6 +18,10 @@ MAKES = {
 }
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+# Record when this run started — used for hard delete at the end
+RUN_START = datetime.now(timezone.utc).isoformat()
+SAFETY_MINIMUM = 50  # don't delete anything if we scraped fewer than this
 
 def extract_model(title, make_name):
     if not title or not make_name:
@@ -38,7 +43,8 @@ def parse_listing(text, href, style='', make_name=''):
         "url": href, "image_url": image_url, "title": None, "description": None,
         "price_eur": None, "year": None, "mileage_km": None, "fuel": None,
         "transmission": None, "body": None, "drive": None, "source": "auto24",
-        "make": make_name, "model": None, "country": "EE"
+        "make": make_name, "model": None, "country": "EE",
+        "last_seen_at": RUN_START,
     }
     for line in lines:
         price_match = re.search(r"([\d\s\xa0]+)\s*€", line)
@@ -150,4 +156,20 @@ with sync_playwright() as p:
 
     browser.close()
 
-print(f"\nAll done. Total: {total}")
+print(f"\nAll done. Total scraped: {total}")
+
+# Hard delete listings not seen in this run
+if total >= SAFETY_MINIMUM:
+    print(f"\nCleaning up stale auto24 listings (not seen since {RUN_START})...")
+    try:
+        result = supabase.table("listings") \
+            .delete() \
+            .eq("source", "auto24") \
+            .lt("last_seen_at", RUN_START) \
+            .execute()
+        deleted = len(result.data) if result.data else 0
+        print(f"Deleted {deleted} stale listings from auto24")
+    except Exception as e:
+        print(f"Cleanup error: {e}")
+else:
+    print(f"\nSkipping cleanup — only scraped {total} listings (minimum is {SAFETY_MINIMUM}). Something may have gone wrong.")

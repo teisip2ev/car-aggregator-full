@@ -4,6 +4,7 @@ from config import SUPABASE_URL, SUPABASE_KEY
 import json
 import re
 import time
+from datetime import datetime, timezone
 
 BODY_TYPE_MAP = {
     'Sedan': 'Sedaan', 'Hatchback': 'Luukpara', 'Wagon': 'Universaal',
@@ -37,6 +38,9 @@ FUEL_MAP = {
     'Diesel': 'Diisel', 'Petrol': 'Bensiin', 'Hybrid': 'Hübriid',
     'Plug-in Hybrid': 'Hübriid', 'Electric': 'Elekter', 'Gas': 'Gaasbensiin'
 }
+
+RUN_START = datetime.now(timezone.utc).isoformat()
+SAFETY_MINIMUM = 50
 
 def parse_json_listings(html, make_name):
     matches = re.findall(r'<script type="application/ld\+json">(.*?)</script>', html, re.DOTALL)
@@ -93,7 +97,8 @@ def parse_item(item, make_name):
             'fuel': fuel, 'transmission': transmission,
             'body': BODY_TYPE_MAP.get(item.get('bodyType', ''), item.get('bodyType')), 'drive': None,
             'image_url': image_url, 'source': 'autoportaal',
-            'country': 'EE'
+            'country': 'EE',
+            'last_seen_at': RUN_START,
         }
     except:
         return None
@@ -142,4 +147,19 @@ with sync_playwright() as p:
         time.sleep(3)
     browser.close()
 
-print(f"\nAll done. Total: {grand_total} listings")
+print(f"\nAll done. Total scraped: {grand_total}")
+
+if grand_total >= SAFETY_MINIMUM:
+    print(f"\nCleaning up stale autoportaal listings (not seen since {RUN_START})...")
+    try:
+        result = supabase.table("listings") \
+            .delete() \
+            .eq("source", "autoportaal") \
+            .lt("last_seen_at", RUN_START) \
+            .execute()
+        deleted = len(result.data) if result.data else 0
+        print(f"Deleted {deleted} stale listings from autoportaal")
+    except Exception as e:
+        print(f"Cleanup error: {e}")
+else:
+    print(f"\nSkipping cleanup — only scraped {grand_total} listings (minimum is {SAFETY_MINIMUM}). Something may have gone wrong.")

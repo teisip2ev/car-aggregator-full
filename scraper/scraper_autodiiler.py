@@ -1,6 +1,9 @@
 import urllib.request
 import json
 import time
+from datetime import date as _date, datetime, timezone
+from supabase import create_client
+from config import SUPABASE_URL, SUPABASE_KEY
 
 BODY_TYPE_MAP = {
     'Sedan': 'Sedaan', 'Hatchback': 'Luukpara', 'Wagon': 'Universaal',
@@ -9,9 +12,6 @@ BODY_TYPE_MAP = {
     'Minivan': 'Minivan', 'Van': 'Kaubik', 'Pickup': 'Pikap',
     'Offroad': 'Maastur', 'Cabriolet': 'Kabriolett',
 }
-from datetime import date as _date
-from supabase import create_client
-from config import SUPABASE_URL, SUPABASE_KEY
 
 MAKES = {
     'Alfa Romeo': 1, 'Audi': 2, 'Bentley': 38, 'BMW': 3, 'Cadillac': 39,
@@ -36,6 +36,9 @@ TRANSMISSION_MAP = {
 }
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+RUN_START = datetime.now(timezone.utc).isoformat()
+SAFETY_MINIMUM = 50
 
 def fetch_page(url):
     req = urllib.request.Request(url, headers={
@@ -68,14 +71,16 @@ def parse_listing(item, make_name):
         image_url = images[0].get('small') if images else None
         description = item.get('seo', {}).get('description', '')
         return {
-            'url': url, 'title': name, 'model': model, 'make': item.get('brand', {}).get('name') or make_name,
+            'url': url, 'title': name, 'model': model,
+            'make': item.get('brand', {}).get('name') or make_name,
             'description': description[:200] if description else None,
             'price_eur': int(price), 'year': year,
             'mileage_km': int(mileage) if mileage else None,
             'fuel': fuel, 'transmission': transmission,
             'body': BODY_TYPE_MAP.get(item.get('vehicleBodyType', {}).get('name', ''), item.get('vehicleBodyType', {}).get('name')),
             'drive': drive, 'image_url': image_url, 'source': 'autodiiler',
-            'country': 'EE'
+            'country': 'EE',
+            'last_seen_at': RUN_START,
         }
     except:
         return None
@@ -118,4 +123,19 @@ for make_name, brand_id in MAKES.items():
     grand_total += count
     time.sleep(2)
 
-print(f"\nAll done. Total: {grand_total} listings")
+print(f"\nAll done. Total scraped: {grand_total}")
+
+if grand_total >= SAFETY_MINIMUM:
+    print(f"\nCleaning up stale autodiiler listings (not seen since {RUN_START})...")
+    try:
+        result = supabase.table("listings") \
+            .delete() \
+            .eq("source", "autodiiler") \
+            .lt("last_seen_at", RUN_START) \
+            .execute()
+        deleted = len(result.data) if result.data else 0
+        print(f"Deleted {deleted} stale listings from autodiiler")
+    except Exception as e:
+        print(f"Cleanup error: {e}")
+else:
+    print(f"\nSkipping cleanup — only scraped {grand_total} listings (minimum is {SAFETY_MINIMUM}). Something may have gone wrong.")

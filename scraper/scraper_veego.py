@@ -1,7 +1,7 @@
 import urllib.request
 import json
 import time
-from datetime import date as _date
+from datetime import date as _date, datetime, timezone
 from supabase import create_client
 from config import SUPABASE_URL, SUPABASE_KEY
 
@@ -30,6 +30,9 @@ FUEL_MAP = {
 }
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+RUN_START = datetime.now(timezone.utc).isoformat()
+SAFETY_MINIMUM = 50
 
 def fetch_page(make_id, page):
     url = 'https://api.veego.ee/api/v2/search'
@@ -81,6 +84,7 @@ def parse_listing(item, make_name):
             'country': 'EE',
             'annual_tax': int(annual_tax) if annual_tax else None,
             'registration_tax': int(registration_tax) if registration_tax else None,
+            'last_seen_at': RUN_START,
         }
     except:
         return None
@@ -122,4 +126,19 @@ for make_name, make_id in MAKES.items():
     grand_total += make_total
     time.sleep(2)
 
-print(f"\nAll done. Total: {grand_total}")
+print(f"\nAll done. Total scraped: {grand_total}")
+
+if grand_total >= SAFETY_MINIMUM:
+    print(f"\nCleaning up stale veego listings (not seen since {RUN_START})...")
+    try:
+        result = supabase.table("listings") \
+            .delete() \
+            .eq("source", "veego") \
+            .lt("last_seen_at", RUN_START) \
+            .execute()
+        deleted = len(result.data) if result.data else 0
+        print(f"Deleted {deleted} stale listings from veego")
+    except Exception as e:
+        print(f"Cleanup error: {e}")
+else:
+    print(f"\nSkipping cleanup — only scraped {grand_total} listings (minimum is {SAFETY_MINIMUM}). Something may have gone wrong.")
