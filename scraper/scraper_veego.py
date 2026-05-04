@@ -110,7 +110,7 @@ for make_name, make_id in MAKES.items():
                     supabase.table('listings').upsert(listings, on_conflict='url').execute()
                     history = [{'url': l['url'], 'price_eur': l['price_eur'], 'scraped_date': str(_date.today())} for l in listings if l.get('price_eur')]
                     if history:
-                        supabase.table('price_history').insert(history).execute()
+                        supabase.table('price_history').upsert(history, on_conflict='url,scraped_date,price_eur').execute()
                     make_total += len(listings)
                     print(f"  Page {page}: saved {len(listings)}")
                     break

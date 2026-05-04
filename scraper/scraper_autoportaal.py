@@ -121,7 +121,7 @@ def scrape_make(page, make_name, make_id, make_slug):
                 from datetime import date as _date
                 history = [{'url': l['url'], 'price_eur': l['price_eur'], 'scraped_date': str(_date.today())} for l in listings if l.get('price_eur')]
                 if history:
-                    supabase.table('price_history').insert(history).execute()
+                    supabase.table('price_history').upsert(history, on_conflict='url,scraped_date,price_eur').execute()
                 total += len(listings)
                 print(f"    Saved {len(listings)} listings")
                 break
