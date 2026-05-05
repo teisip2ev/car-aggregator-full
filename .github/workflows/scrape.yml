@@ -101,3 +101,29 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: python scraper/scraper_auto24lv.py
+
+  refresh-view:
+    runs-on: ubuntu-latest
+    needs: [scrape-autoportaal, scrape-auto24, scrape-autodiiler, scrape-veego, scrape-sslv, scrape-auto24lv]
+    if: always()
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: pip install supabase
+      - name: Refresh materialized view
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: |
+          python -c "
+          import os
+          from supabase import create_client
+          url = os.environ['SUPABASE_URL']
+          key = os.environ['SUPABASE_KEY']
+          sb = create_client(url, key)
+          sb.rpc('refresh_listings_deduped').execute()
+          print('Materialized view refreshed successfully')
+          "

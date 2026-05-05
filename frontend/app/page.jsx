@@ -430,8 +430,7 @@ export default function Home() {
     const sortOrder = sd || sortDir
     const from = pageNum * pageSize
     const to = from + pageSize - 1
-    let q = supabase.from('listings').select('*', { count: 'exact' })
-    q = buildQuery(q)
+let q = supabase.from('listings_deduped').select('*', { count: 'exact' })
     q = q.order(sortField, { ascending: sortOrder === 'asc' }).range(from, to)
     const { data, error, count } = await q
     if (error) { console.error('Supabase error:', JSON.stringify(error)); setLoading(false); return }
